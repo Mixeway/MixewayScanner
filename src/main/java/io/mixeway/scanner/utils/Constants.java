@@ -17,4 +17,5 @@ public final class Constants {
     public static final String DEPENDENCYTRACK_APIKEY_HEADER = "X-Api-Key";
     public static final String DEPENDENCYTRACK_GET_PROJECTS = "/api/v1/project";
     public static final String DEPENDENCYTRACK_URL_PERMISSIONS = "/api/v1/permission/";
+    public static final String GIT_BRANCH_MASTER = "master";
 }

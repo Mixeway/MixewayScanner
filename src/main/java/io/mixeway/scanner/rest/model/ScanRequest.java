@@ -14,6 +14,24 @@ public class ScanRequest {
     public String username;
     public String password;
     public String exclusions;
+    public String branch;
+    public String projectName;
+
+    public String getProjectName() {
+        return projectName;
+    }
+
+    public void setProjectName(String projectName) {
+        this.projectName = projectName;
+    }
+
+    public String getBranch() {
+        return branch;
+    }
+
+    public void setBranch(String branch) {
+        this.branch = branch;
+    }
 
     public ScannerType getType() {
         return type;
