@@ -11,6 +11,8 @@ import io.mixeway.scanner.integrations.ScannerIntegrationFactory;
 import io.mixeway.scanner.integrations.model.*;
 import io.mixeway.scanner.rest.model.ScanRequest;
 import io.mixeway.scanner.utils.Constants;
+import io.mixeway.scanner.utils.CodeHelper;
+import io.mixeway.scanner.utils.SourceProjectType;
 import org.hobsoft.spring.resttemplatelogger.LoggingCustomizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +27,8 @@ import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -52,6 +56,7 @@ public class DependencyTrack implements ScannerIntegrationFactory {
     public void prepare() throws Exception {
         Optional<DependencyTrackEntity> dependencyTrackEntity = dependencyTrackRepository.findByEnabledAndApiKeyNotNull(true);
         if (!dependencyTrackEntity.isPresent()){
+            changePassword();
             getApiKey();
             setOssIntegration();
         }
@@ -141,6 +146,7 @@ public class DependencyTrack implements ScannerIntegrationFactory {
                     Constants.DEPENDENCYTRACK_URL_PERMISSIONS + permision + "/team/" + automationTeamUuid, HttpMethod.POST, entity, String.class);
 
         }
+        log.info("[Dependency Track] Permission for API enabled");
     }
 
     @Override
@@ -150,6 +156,9 @@ public class DependencyTrack implements ScannerIntegrationFactory {
         if(dependencyTrack.isPresent()) {
             // TODO get uuid of project (create or get from list)
             String uuid = getDTrackProjectUuid(dependencyTrack.get(),scanRequest);
+            SourceProjectType sourceProjectType = CodeHelper.getSourceProjectTypeFromDirectory(scanRequest);
+            String bomPath = generateBom(scanRequest, sourceProjectType);
+            log.info("Get UUID {} and type of project {}", uuid, sourceProjectType);
             // TODO Clone repository
             // TODO determine project language
             // TODO prepare project to generate BOM
@@ -163,6 +172,36 @@ public class DependencyTrack implements ScannerIntegrationFactory {
                     "This should not happen, please collect log and issue ticket.");
         }
 
+    }
+
+    /**
+     * Generation of SBOM using CycloneDX plugin which depend on technology. Required for this method is language of project and path to location
+     *
+     * @param scanRequest needed to get location of source code
+     * @param sourceProjectType needed to determine which type of execution to be done
+     * @return return path to SBOM file
+     */
+    private String generateBom(ScanRequest scanRequest, SourceProjectType sourceProjectType) throws IOException {
+        String directory = CodeHelper.getProjectPath(scanRequest);
+        switch (sourceProjectType) {
+            case PIP:
+                ProcessBuilder builder = new ProcessBuilder("bash", "-c", "echo asdsda > test");
+                //builder.command("echo 'test' >test");
+                builder.directory(new File(directory));
+                Process process = builder.start();
+                break;
+            case NPM:
+                break;
+            case MAVEN:
+                break;
+            case GRADLE:
+                break;
+            case COMPOSER:
+                break;
+            default:
+                return null;
+        }
+        return null;
     }
 
     /**
@@ -181,19 +220,6 @@ public class DependencyTrack implements ScannerIntegrationFactory {
             return response.getBody();
         }
         return null;
-    }
-
-    /**
-     * Gettig repo name from URL
-     * e.g: https://github.com/mixeway/mixewayhub.git should return mixewayhub
-     *
-     * @param repoUrl URL for repository
-     * @return name of repository
-     */
-    private String getNameFromRepoUrl(String repoUrl){
-        String[] partsOfUrl = repoUrl.split("/");
-        String repoName = partsOfUrl[partsOfUrl.length-1];
-        return repoName.split("\\.")[0];
     }
 
     /**
@@ -227,11 +253,11 @@ public class DependencyTrack implements ScannerIntegrationFactory {
      * @param name name of project to be created
      * @return uuid of project
      */
-    private String createProject(DependencyTrackEntity dependencyTrackEntity, String name) {
+    private String createProject(DependencyTrackEntity dependencyTrackEntity, String name, String branch) {
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
         headers.set(Constants.DEPENDENCYTRACK_APIKEY_HEADER, dependencyTrackEntity.getApiKey());
-        HttpEntity<DTrackCreateProject> entity = new HttpEntity<>(new DTrackCreateProject(name),headers);
+        HttpEntity<DTrackCreateProject> entity = new HttpEntity<>(new DTrackCreateProject(name + "_" + branch),headers);
         try {
             ResponseEntity<DTrackCreateProjectResponse> response = restTemplate.exchange(Constants.DEPENDENCYTRACK_URL +
                     Constants.DEPENDENCYTRACK_GET_PROJECTS, HttpMethod.PUT, entity, DTrackCreateProjectResponse.class);
@@ -248,6 +274,22 @@ public class DependencyTrack implements ScannerIntegrationFactory {
     }
 
     /**
+     * Change default admin password - DTrack require admin after first login to force password change
+     *
+     */
+    private void changePassword() {
+        RestTemplate restTemplate = new RestTemplate();
+        HttpHeaders headers = new HttpHeaders();
+        headers.set(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE);
+        HttpEntity<String> entity = new HttpEntity<>(Constants.DEPENDENCYTRACK_CHANGE_PASSWORD_STRING, headers);
+        ResponseEntity<String> response = restTemplate.exchange(Constants.DEPENDENCYTRACK_URL +
+                Constants.DEPENDENCYTRACK_URL_CHANGE_PASSWORD, HttpMethod.POST, entity, String.class);
+        if (response.getStatusCode().equals(HttpStatus.OK)){
+            log.info("[Dependency Track] Default admin password changed");
+        }
+    }
+
+    /**
      * Method which return UUID for project on DependencyTrack by ScanRequest.class.
      * If project is present it simply return its UUID, if project is not present it is being created
      *
@@ -258,14 +300,17 @@ public class DependencyTrack implements ScannerIntegrationFactory {
     private String getDTrackProjectUuid(DependencyTrackEntity dependencyTrackEntity, ScanRequest scanRequest){
         List<DTrackProject> dTrackProjects = getProjects(dependencyTrackEntity);
         if (dTrackProjects!= null && dTrackProjects.size() > 0) {
-            Optional<DTrackProject> dTrackProject = dTrackProjects.stream().filter(p -> p.getName().equals(getNameFromRepoUrl(scanRequest.getTarget()))).findFirst();
+            Optional<DTrackProject> dTrackProject = dTrackProjects
+                    .stream()
+                    .filter(p -> p.getName().equals(CodeHelper.getNameFromRepoUrlforSAST(scanRequest.getTarget()) + "_" + scanRequest.getBranch()))
+                    .findFirst();
             if (dTrackProject.isPresent()){
                 return dTrackProject.get().getUuid();
             } else {
-                return createProject(dependencyTrackEntity, getNameFromRepoUrl(scanRequest.getTarget()));
+                return createProject(dependencyTrackEntity, CodeHelper.getNameFromRepoUrlforSAST(scanRequest.getTarget()), scanRequest.getBranch());
             }
         } else {
-            return createProject(dependencyTrackEntity, getNameFromRepoUrl(scanRequest.getTarget()));
+            return createProject(dependencyTrackEntity, CodeHelper.getNameFromRepoUrlforSAST(scanRequest.getTarget()), scanRequest.getBranch());
         }
     }
 }

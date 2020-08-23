@@ -8,8 +8,12 @@ package io.mixeway.scanner.rest.model;
 import io.mixeway.scanner.utils.ScannerPluginType;
 import io.mixeway.scanner.utils.ScannerType;
 
+import javax.validation.constraints.NotNull;
+
 public class ScanRequest {
+    @NotNull(message = "Scanner Type cannot be null possible options 'SAST' or 'DAST'")
     public ScannerType type;
+    @NotNull(message = "Target cannot be null. In scope of SAST scan target is GIT repo, in scope of DAST scan target is URL to scan")
     public String target;
     public String username;
     public String password;

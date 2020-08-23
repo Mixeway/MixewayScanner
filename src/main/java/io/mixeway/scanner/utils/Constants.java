@@ -11,11 +11,13 @@ public final class Constants {
     public static final String DEPENDENCYTRACK_URL = "http://localhost:8080";
     public static final String DEPENDENCYTRACK_URL_LOGIN = "/api/v1/user/login";
     public static final String DEPENDENCYTRACK_URL_APIKEY = "/api/v1/team?searchText=&sortOrder=asc";
-    public static final String DEPENDENCYTRACK_LOGIN_STRING = "username=admin&password=admin";
+    public static final String DEPENDENCYTRACK_LOGIN_STRING = "username=admin&password=admin1";
+    public static final String DEPENDENCYTRACK_CHANGE_PASSWORD_STRING = "username=admin&password=admin&newPassword=admin1&confirmPassword=admin1";
     public static final String DEPENDENCYTRACK_AUTOMATION = "Automation";
     public static final String DEPENDENCYTRACK_URL_OSS_CONFIG = "/api/v1/configProperty/aggregate";
     public static final String DEPENDENCYTRACK_APIKEY_HEADER = "X-Api-Key";
     public static final String DEPENDENCYTRACK_GET_PROJECTS = "/api/v1/project";
     public static final String DEPENDENCYTRACK_URL_PERMISSIONS = "/api/v1/permission/";
     public static final String GIT_BRANCH_MASTER = "master";
+    public static final String DEPENDENCYTRACK_URL_CHANGE_PASSWORD = "/api/v1/user/forceChangePassword";
 }

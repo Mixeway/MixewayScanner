@@ -10,6 +10,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.Profile;
+import org.springframework.core.env.Environment;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -19,10 +21,12 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableJpaRepositories("io.mixeway.scanner.db.repository")
 @EntityScan(basePackages = "io.mixeway.scanner.db.entity")
 @EnableJpaAuditing
+@Profile("REST")
 public class ScannerApplication {
 
    public static void main(String[] args) {
-        SpringApplication.run(ScannerApplication.class, args);
+
+       SpringApplication.run(ScannerApplication.class, args);
     }
 
 

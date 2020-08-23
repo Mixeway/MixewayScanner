@@ -51,7 +51,7 @@ public class GitOperations {
             FileRepositoryBuilder builder = new FileRepositoryBuilder();
             CredentialsProvider credentialsProvider = prepareCredentails(scanRequest);
 
-            Repository repository = builder.setGitDir(Paths.get(sourceLocation + File.separatorChar + scanRequest.getProjectName() + File.separatorChar + ".git").toFile())
+            Repository repository = builder.setGitDir(Paths.get(sourceLocation + File.separatorChar + CodeHelper.getNameFromRepoUrlforSAST(scanRequest.getTarget()) + File.separatorChar + ".git").toFile())
                     .readEnvironment()
                     .findGitDir()
                     .build();
@@ -65,7 +65,7 @@ public class GitOperations {
                     .call();
             Ref call = git.checkout().setName("origin/" + (scanRequest.getBranch() != null ? scanRequest.getBranch() : Constants.GIT_BRANCH_MASTER)).call();
             String commitId = git.log().setMaxCount(1).call().iterator().next().getName();
-            log.info("[GIT] Successfully fetched repo for {} commitId id is {} branch {}", scanRequest.getProjectName(), commitId, scanRequest.getBranch());
+            log.info("[GIT] Successfully fetched repo for {} commitId id is {} branch {}", scanRequest.getTarget(), commitId, scanRequest.getBranch());
             return new GitResponse(true,commitId);
         } catch (GitAPIException | IOException e){
             log.error("[GIT] Error during fetching repo {}", e.getLocalizedMessage());
@@ -88,14 +88,13 @@ public class GitOperations {
             Git git = Git.cloneRepository()
                     .setCredentialsProvider(prepareCredentails(scanRequest))
                     .setURI(scanRequest.getTarget() + ".git")
-                    .setDirectory(Paths.get(sourceLocation + File.separatorChar + scanRequest.getProjectName()).toFile())
+                    .setDirectory(Paths.get(sourceLocation + File.separatorChar + CodeHelper.getNameFromRepoUrlforSAST(scanRequest.getTarget())).toFile())
                     .call();
             Ref call = git.checkout().setName("origin/" + (scanRequest.getBranch() != null ? scanRequest.getBranch() : Constants.GIT_BRANCH_MASTER)).call();
             String commitId = git.log().setMaxCount(1).call().iterator().next().getName();
-            log.info("[GIT] Successfully cloned repo for {} commitId is {} branch {}", scanRequest.getProjectName(), commitId, scanRequest.getBranch());
+            log.info("[GIT] Successfully cloned repo for {} commitId is {} branch {}", scanRequest.getTarget(), commitId, scanRequest.getBranch());
             return new GitResponse(true, commitId);
         } catch (GitAPIException e){
-            e.printStackTrace();
             log.error("[GIT] Error cloning repo {}", e.getLocalizedMessage());
         }
         return new GitResponse(false, "");
@@ -122,11 +121,11 @@ public class GitOperations {
     /**
      * Method which verify if location and configuration for given request is already configured
      *
-     * @param scanRequest scan request with projectname to verify
+     * @param scanRequest scan request with target to verify
      * @return boolean if location exists or not
      */
     public boolean isProjectPresent(ScanRequest scanRequest){
-        Path path = Paths.get(sourceLocation + File.separatorChar + scanRequest.getProjectName());
+        Path path = Paths.get(sourceLocation + File.separatorChar + CodeHelper.getNameFromRepoUrlforSAST(scanRequest.getTarget()));
         return Files.exists(path);
     }
 

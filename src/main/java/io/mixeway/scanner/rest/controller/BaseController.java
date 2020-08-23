@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.validation.Valid;
+
 @RestController
 public class BaseController {
     BaseService baseService;
@@ -22,7 +24,7 @@ public class BaseController {
         this.baseService = baseService;
     }
     @PostMapping("/run")
-    public Status runScan(@RequestBody ScanRequest scanRequest) throws Exception {
+    public Status runScan(@Valid @RequestBody ScanRequest scanRequest) throws Exception {
         return baseService.runScan(scanRequest);
     }
 }
