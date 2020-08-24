@@ -48,11 +48,12 @@ public class CodeHelper {
             return SourceProjectType.MAVEN;
         }
         File gradle = new File(projectLocation + File.separatorChar + "build.xml");
-        if (gradle.exists()) {
+        File gradle2 = new File(projectLocation + File.separatorChar + "build.gradle");
+        if (gradle.exists() || gradle2.exists()) {
             prepareGradle(gradle);
             return SourceProjectType.GRADLE;
         }
-        File npm = new File(projectLocation + File.separatorChar + "packages.json");
+        File npm = new File(projectLocation + File.separatorChar + "package.json");
         if(npm.exists()){
             return SourceProjectType.NPM;
         }

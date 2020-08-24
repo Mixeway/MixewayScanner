@@ -13,6 +13,8 @@ import io.mixeway.scanner.rest.model.ScanRequest;
 import io.mixeway.scanner.utils.Constants;
 import io.mixeway.scanner.utils.CodeHelper;
 import io.mixeway.scanner.utils.SourceProjectType;
+import org.apache.commons.io.FileUtils;
+import org.apache.tomcat.util.codec.binary.Base64;
 import org.hobsoft.spring.resttemplatelogger.LoggingCustomizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,17 +31,19 @@ import org.springframework.web.client.RestTemplate;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 @Component
 public class DependencyTrack implements ScannerIntegrationFactory {
     private final static Logger log = LoggerFactory.getLogger(DependencyTrack.class);
     private DependencyTrackRepository dependencyTrackRepository;
-    @Value("${OSS_USERNAME:blank}")
+    @Value("${sonatype.oss.username}")
     private String ossUsername;
-    @Value("${OSS_KEY:blank}")
+    @Value("${sonatype.oss.key}")
     private String ossKey;
 
     @Autowired
@@ -59,6 +63,31 @@ public class DependencyTrack implements ScannerIntegrationFactory {
             changePassword();
             getApiKey();
             setOssIntegration();
+        }
+    }
+
+    /**
+     * Loading vulnerabilities from dependency-track
+     * @param dependencyTrack to get url and api
+     * @param uuid of project to check
+     */
+    private void loadVulnerabilities(DependencyTrackEntity dependencyTrack, String uuid ){
+        RestTemplate restTemplate = new RestTemplate();
+        HttpHeaders headers = new HttpHeaders();
+        headers.set(Constants.DEPENDENCYTRACK_APIKEY_HEADER, dependencyTrack.getApiKey());
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+        ResponseEntity<List<DTrackVuln>> response = restTemplate.exchange(Constants.DEPENDENCYTRACK_URL +
+                    Constants.DEPENDENCYTRACK_URL_VULNS + uuid, HttpMethod.GET, entity, new ParameterizedTypeReference<List<DTrackVuln>>() {
+            });
+        if (response.getStatusCode() == HttpStatus.OK) {
+            for(DTrackVuln dTrackVuln : response.getBody()){
+                for(io.mixeway.scanner.integrations.model.Component component : dTrackVuln.getComponents()){
+                    log.info("[Dependency Track] {} v{} - {} ({})/ {}", component.getName(), component.getVersion(), dTrackVuln.getVulnId(), dTrackVuln.getSeverity(), uuid);
+                    // TODO Send to Mixeway
+                }
+            }
+        } else {
+            log.error("[Dependency Track] Unable to get Findings from Dependency Track for project {}", uuid);
         }
     }
 
@@ -132,6 +161,11 @@ public class DependencyTrack implements ScannerIntegrationFactory {
 
     }
 
+    /**
+     * Default API user doesn't have permission to view or create projects, those hase to be added
+     *
+     * @param automationTeamUuid
+     */
     private void setPermissions(String automationTeamUuid) {
         RestTemplate restTemplate =  new RestTemplateBuilder()
                 .customizers(new LoggingCustomizer())
@@ -149,29 +183,65 @@ public class DependencyTrack implements ScannerIntegrationFactory {
         log.info("[Dependency Track] Permission for API enabled");
     }
 
+
+    /**
+     * whole scan logic, get UUID or create project, generate BOM, upload it to DTrack and then load vulnerabilities
+     *
+     * @throws Exception
+     */
     @Override
     public void runScan(ScanRequest scanRequest) throws Exception {
         this.prepare();
         Optional<DependencyTrackEntity> dependencyTrack = dependencyTrackRepository.findByEnabledAndApiKeyNotNull(true);
         if(dependencyTrack.isPresent()) {
-            // TODO get uuid of project (create or get from list)
             String uuid = getDTrackProjectUuid(dependencyTrack.get(),scanRequest);
             SourceProjectType sourceProjectType = CodeHelper.getSourceProjectTypeFromDirectory(scanRequest);
+            log.info("[Dependency Track] Get UUID {} and type of project {}", uuid, sourceProjectType);
             String bomPath = generateBom(scanRequest, sourceProjectType);
-            log.info("Get UUID {} and type of project {}", uuid, sourceProjectType);
-            // TODO Clone repository
-            // TODO determine project language
-            // TODO prepare project to generate BOM
-            // TODO generate bom
-            // TODO send bom to dependencytrack
-            // TODO Create scan entity
-            // TODO get results
-            // TODO update scan entity
+            if (bomPath == null) {
+                throw new Exception("SBOM path appears to be null");
+            }
+            sendBomToDTrack(dependencyTrack.get(), uuid, bomPath);
+            //Sleep untill DTrack audit the bom
+            TimeUnit.SECONDS.sleep(30);
+            loadVulnerabilities(dependencyTrack.get(),uuid);
         } else {
             log.error("[Dependency Track] Trying to run scan on not properly initialized scanner. " +
                     "This should not happen, please collect log and issue ticket.");
         }
 
+    }
+
+    /**
+     * Method which uploads SBOM to Dependency Track
+     *
+     * @param dependencyTrackEntity for URL and api key
+     * @param uuid UUID of project on DTrack to attach SBOM
+     * @param bomPath location of file to upload
+     */
+    private void sendBomToDTrack(DependencyTrackEntity dependencyTrackEntity, String uuid, String bomPath) throws IOException {
+        RestTemplate restTemplate = new RestTemplate();
+        HttpHeaders headers = new HttpHeaders();
+        headers.set(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
+        headers.set(Constants.DEPENDENCYTRACK_APIKEY_HEADER, dependencyTrackEntity.getApiKey());
+        HttpEntity<SendBomRequest> entity = new HttpEntity<>(new SendBomRequest(uuid, encodeFileToBase64Binary(bomPath)), headers);
+        ResponseEntity<String> response = restTemplate.exchange(Constants.DEPENDENCYTRACK_URL +
+                Constants.DEPENDENCYTRACK_URL_UPLOAD_BOM, HttpMethod.PUT, entity, String.class);
+        if (response.getStatusCode().equals(HttpStatus.OK)){
+            log.info("[Dependency Track] SBOM for {} uploaded successfully", uuid);
+        }
+    }
+
+    /**
+     * Encodes file content to base64
+     * @param fileName file name to encode
+     * @return return base64 string
+     * @throws IOException
+     */
+    private static String encodeFileToBase64Binary(String fileName) throws IOException {
+        File file = new File(fileName);
+        byte[] encoded = Base64.encodeBase64(FileUtils.readFileToByteArray(file));
+        return new String(encoded, StandardCharsets.US_ASCII);
     }
 
     /**
@@ -181,23 +251,63 @@ public class DependencyTrack implements ScannerIntegrationFactory {
      * @param sourceProjectType needed to determine which type of execution to be done
      * @return return path to SBOM file
      */
-    private String generateBom(ScanRequest scanRequest, SourceProjectType sourceProjectType) throws IOException {
+    private String generateBom(ScanRequest scanRequest, SourceProjectType sourceProjectType) throws IOException, InterruptedException {
         String directory = CodeHelper.getProjectPath(scanRequest);
+        ProcessBuilder install, generate;
+        Process installProcess, generateProcess;
+
         switch (sourceProjectType) {
             case PIP:
-                ProcessBuilder builder = new ProcessBuilder("bash", "-c", "echo asdsda > test");
-                //builder.command("echo 'test' >test");
-                builder.directory(new File(directory));
-                Process process = builder.start();
-                break;
+                ProcessBuilder freeze = new ProcessBuilder("bash", "-c", "pip3 freeze > requirements.txt");
+                install = new ProcessBuilder("bash", "-c", "pip3 install cyclonedx-bom");
+                generate = new ProcessBuilder("bash", "-c", "cyclonedx-py -i requirements.txt -o bom.xml");
+                freeze.directory(new File(directory));
+                Process freezeProcess = freeze.start();
+                freezeProcess.waitFor();
+                log.info("[Dependency Track] Freezing PIP dependencies for {}", directory);
+                install.directory(new File(directory));
+                installProcess = install.start();
+                installProcess.waitFor();
+                log.info("[Dependency Track] Installed CycloneDX PIP for {}", directory);
+                generate.directory(new File(directory));
+                generateProcess = generate.start();
+                generateProcess.waitFor();
+                log.info("[Dependency Track] Generated SBOM for {}", directory);
+                return directory + File.separatorChar + "bom.xml";
             case NPM:
-                break;
+                install = new ProcessBuilder("bash", "-c", "npm install -g @cyclonedx/bom");
+                install.directory(new File(directory));
+                installProcess = install.start();
+                installProcess.waitFor();
+                log.info("[Dependency Track] Installed CycloneDX NPM for {}", directory);
+                generate = new ProcessBuilder("bash", "-c", "cyclonedx-bom -o bom.xml");
+                generate.directory(new File(directory));
+                generateProcess = generate.start();
+                generateProcess.waitFor();
+                log.info("[Dependency Track] Generated SBOM for {}", directory);
+                return directory + File.separatorChar + "bom.xml";
             case MAVEN:
-                break;
+                generate = new ProcessBuilder("bash", "-c", "mvn -DSPDXParser.OnlyUseLocalLicenses=true org.cyclonedx:cyclonedx-maven-plugin:makeAggregateBom");
+                generate.directory(new File(directory));
+                generateProcess = generate.start();
+                generateProcess.waitFor();
+                log.info("[Dependency Track] Generated SBOM for {}", directory);
+                return directory + File.separatorChar + "target" + File.separatorChar + "bom.xml";
             case GRADLE:
+                log.error("[Dependency Track] GRADLE not yet supported");
                 break;
             case COMPOSER:
-                break;
+                install = new ProcessBuilder("bash", "-c", "composer require --dev cyclonedx/cyclonedx-php-composer");
+                install.directory(new File(directory));
+                installProcess = install.start();
+                installProcess.waitFor();
+                log.info("[Dependency Track] Installed CycloneDX COMPOSER for {}", directory);
+                generate = new ProcessBuilder("bash", "-c", "composer make-bom");
+                generate.directory(new File(directory));
+                generateProcess = generate.start();
+                generateProcess.waitFor();
+                log.info("[Dependency Track] Generated SBOM for {}", directory);
+                return directory + File.separatorChar + "bom.xml";
             default:
                 return null;
         }

@@ -20,4 +20,7 @@ public final class Constants {
     public static final String DEPENDENCYTRACK_URL_PERMISSIONS = "/api/v1/permission/";
     public static final String GIT_BRANCH_MASTER = "master";
     public static final String DEPENDENCYTRACK_URL_CHANGE_PASSWORD = "/api/v1/user/forceChangePassword";
+    public static final String DEPENDENCYTRACK_URL_UPLOAD_BOM = "/api/v1/bom";
+
+    public static final Object DEPENDENCYTRACK_URL_VULNS = "/api/v1/vulnerability/project/";
 }
