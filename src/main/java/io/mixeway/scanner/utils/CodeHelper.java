@@ -31,18 +31,27 @@ public class CodeHelper {
      * @param repoUrl URL for repository
      * @return name of repository
      */
-    public static String getNameFromRepoUrlforSAST(String repoUrl){
-        String[] partsOfUrl = repoUrl.split("/");
-        String repoName = partsOfUrl[partsOfUrl.length-1];
-        return repoName.split("\\.")[0];
+    public static String getNameFromRepoUrlforSAST(String repoUrl, boolean standalone){
+        if (standalone) {
+            return "standaloneApp";
+        } else {
+            String[] partsOfUrl = repoUrl.split("/");
+            String repoName = partsOfUrl[partsOfUrl.length - 1];
+            return repoName.split("\\.")[0];
+        }
     }
 
     /**
      * Determine type of source code in given location - JAVA-MVN, JAVA-Gradle, NPM, PIP or PHP-COMPOSER
      *
      */
-    public static SourceProjectType getSourceProjectTypeFromDirectory(ScanRequest scanRequest){
-        String projectLocation = sourceLocation + File.separatorChar + getNameFromRepoUrlforSAST(scanRequest.getTarget());
+    public static SourceProjectType getSourceProjectTypeFromDirectory(ScanRequest scanRequest, boolean standalone){
+        String projectLocation;
+        if (standalone){
+            projectLocation = Constants.STANDALONE_DEFAULT_SOURCE_PATH;
+        } else {
+            projectLocation = sourceLocation + File.separatorChar + getNameFromRepoUrlforSAST(scanRequest.getTarget(), standalone);
+        }
         File pom = new File(projectLocation + File.separatorChar + "pom.xml");
         if(pom.exists()){
             return SourceProjectType.MAVEN;
@@ -79,7 +88,6 @@ public class CodeHelper {
      * @param gradle path to gradle file
      */
     private static void prepareGradle(File gradle) {
-
         //TODO edit of build.xml
     }
 
@@ -89,7 +97,11 @@ public class CodeHelper {
      * @param scanRequest to process
      * @return path to code
      */
-    public static String getProjectPath(ScanRequest scanRequest){
-        return  sourceLocation + File.separatorChar + getNameFromRepoUrlforSAST(scanRequest.getTarget());
+    public static String getProjectPath(ScanRequest scanRequest, boolean standalone){
+        if (standalone){
+            return Constants.STANDALONE_DEFAULT_SOURCE_PATH;
+        } else {
+            return  sourceLocation + File.separatorChar + getNameFromRepoUrlforSAST(scanRequest.getTarget(), standalone);
+        }
     }
 }

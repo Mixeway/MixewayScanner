@@ -10,4 +10,5 @@ import io.mixeway.scanner.rest.model.ScanRequest;
 public interface ScannerIntegrationFactory {
     void prepare() throws Exception;
     void runScan(ScanRequest scanRequest) throws Exception;
+    void runScanStandalone() throws Exception;
 }

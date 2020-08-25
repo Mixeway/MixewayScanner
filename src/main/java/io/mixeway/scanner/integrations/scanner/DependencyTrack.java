@@ -194,10 +194,13 @@ public class DependencyTrack implements ScannerIntegrationFactory {
         this.prepare();
         Optional<DependencyTrackEntity> dependencyTrack = dependencyTrackRepository.findByEnabledAndApiKeyNotNull(true);
         if(dependencyTrack.isPresent()) {
-            String uuid = getDTrackProjectUuid(dependencyTrack.get(),scanRequest);
-            SourceProjectType sourceProjectType = CodeHelper.getSourceProjectTypeFromDirectory(scanRequest);
+            String uuid = getDTrackProjectUuid(dependencyTrack.get(),scanRequest, false);
+            SourceProjectType sourceProjectType = CodeHelper.getSourceProjectTypeFromDirectory(scanRequest, false);
+            if (sourceProjectType == null){
+                throw new Exception("Unknown project type. Supported: MVN, NPM, Composer, PIP");
+            }
             log.info("[Dependency Track] Get UUID {} and type of project {}", uuid, sourceProjectType);
-            String bomPath = generateBom(scanRequest, sourceProjectType);
+            String bomPath = generateBom(scanRequest, sourceProjectType, false);
             if (bomPath == null) {
                 throw new Exception("SBOM path appears to be null");
             }
@@ -209,7 +212,34 @@ public class DependencyTrack implements ScannerIntegrationFactory {
             log.error("[Dependency Track] Trying to run scan on not properly initialized scanner. " +
                     "This should not happen, please collect log and issue ticket.");
         }
+    }
 
+    /**
+     * Running standalone scan
+     */
+    @Override
+    public void runScanStandalone() throws Exception {
+        this.prepare();
+        Optional<DependencyTrackEntity> dependencyTrack = dependencyTrackRepository.findByEnabledAndApiKeyNotNull(true);
+        if(dependencyTrack.isPresent()) {
+            String uuid = getDTrackProjectUuid(dependencyTrack.get(),new ScanRequest(), true);
+            SourceProjectType sourceProjectType = CodeHelper.getSourceProjectTypeFromDirectory(new ScanRequest(), true);
+            if (sourceProjectType == null){
+                throw new Exception("Unknown project type. Supported: MVN, NPM, Composer, PIP");
+            }
+            log.info("[Dependency Track] Get UUID {} and type of project {}", uuid, sourceProjectType);
+            String bomPath = generateBom(new ScanRequest(), sourceProjectType, true);
+            if (bomPath == null) {
+                throw new Exception("SBOM path appears to be null");
+            }
+            sendBomToDTrack(dependencyTrack.get(), uuid, bomPath);
+            //Sleep untill DTrack audit the bom
+            TimeUnit.SECONDS.sleep(40);
+            loadVulnerabilities(dependencyTrack.get(),uuid);
+        } else {
+            log.error("[Dependency Track] Trying to run scan on not properly initialized scanner. " +
+                    "This should not happen, please collect log and issue ticket.");
+        }
     }
 
     /**
@@ -251,8 +281,8 @@ public class DependencyTrack implements ScannerIntegrationFactory {
      * @param sourceProjectType needed to determine which type of execution to be done
      * @return return path to SBOM file
      */
-    private String generateBom(ScanRequest scanRequest, SourceProjectType sourceProjectType) throws IOException, InterruptedException {
-        String directory = CodeHelper.getProjectPath(scanRequest);
+    private String generateBom(ScanRequest scanRequest, SourceProjectType sourceProjectType, boolean standalone) throws IOException, InterruptedException {
+        String directory = CodeHelper.getProjectPath(scanRequest, standalone);
         ProcessBuilder install, generate;
         Process installProcess, generateProcess;
 
@@ -407,20 +437,20 @@ public class DependencyTrack implements ScannerIntegrationFactory {
      * @param scanRequest request with name and url repo
      * @return UUID on dependency track
      */
-    private String getDTrackProjectUuid(DependencyTrackEntity dependencyTrackEntity, ScanRequest scanRequest){
+    private String getDTrackProjectUuid(DependencyTrackEntity dependencyTrackEntity, ScanRequest scanRequest, boolean standalone){
         List<DTrackProject> dTrackProjects = getProjects(dependencyTrackEntity);
         if (dTrackProjects!= null && dTrackProjects.size() > 0) {
             Optional<DTrackProject> dTrackProject = dTrackProjects
                     .stream()
-                    .filter(p -> p.getName().equals(CodeHelper.getNameFromRepoUrlforSAST(scanRequest.getTarget()) + "_" + scanRequest.getBranch()))
+                    .filter(p -> p.getName().equals(CodeHelper.getNameFromRepoUrlforSAST(scanRequest.getTarget(), standalone) + "_" + scanRequest.getBranch()))
                     .findFirst();
             if (dTrackProject.isPresent()){
                 return dTrackProject.get().getUuid();
             } else {
-                return createProject(dependencyTrackEntity, CodeHelper.getNameFromRepoUrlforSAST(scanRequest.getTarget()), scanRequest.getBranch());
+                return createProject(dependencyTrackEntity, CodeHelper.getNameFromRepoUrlforSAST(scanRequest.getTarget(), standalone), scanRequest.getBranch());
             }
         } else {
-            return createProject(dependencyTrackEntity, CodeHelper.getNameFromRepoUrlforSAST(scanRequest.getTarget()), scanRequest.getBranch());
+            return createProject(dependencyTrackEntity, CodeHelper.getNameFromRepoUrlforSAST(scanRequest.getTarget(), standalone), scanRequest.getBranch());
         }
     }
 }
