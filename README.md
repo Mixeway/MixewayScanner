@@ -6,6 +6,7 @@ Mixeway Scanner Aggregator is Spring Boot application which aggregate and integr
 ## Supported Scanners:
 * OWASP Dependency Track - https://dependencytrack.org
 * Spotbugs - https://spotbugs.github.io 
+* Bandit - https://github.com/PyCQA/bandit
 
 
 ## Scope of integration
@@ -41,3 +42,4 @@ where target is URL for repo, branch is branch name to be sanned and type is SAS
 | Scanner version  | Languages |
 |---|---|
 |v0.9.0| JAVA-MAVEN   |
+|v0.9.1| JAVA-MAVEN, Python3|

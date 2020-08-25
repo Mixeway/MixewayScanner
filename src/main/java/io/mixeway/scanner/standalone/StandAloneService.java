@@ -50,6 +50,10 @@ public class StandAloneService {
                     ScannerIntegrationFactory spotbug = scannerFactory.getProperScanner(ScannerPluginType.SPOTBUG);
                     spotbug.runScanStandalone();
                     break;
+                case PIP:
+                    ScannerIntegrationFactory bandit = scannerFactory.getProperScanner(ScannerPluginType.BANDIT);
+                    bandit.runScanStandalone();
+                    break;
                 default:
                     log.error("Source Code Language not supported");
                     System.exit(1);

@@ -37,17 +37,18 @@ public class BaseService {
     public ResponseEntity<Status> runScan(ScanRequest scanRequest) {
         try {
             if (scanRequest.getType().equals(ScannerType.SAST)) {
-                SourceProjectType sourceProjectType = CodeHelper.getSourceProjectTypeFromDirectory(scanRequest, false);
-                if (sourceProjectType == null) {
-                    log.error("Repository doesnt contain any of the known types of projects. Current version support only JAVA-Maven projects.");
-                    return new ResponseEntity<>(HttpStatus.PRECONDITION_FAILED);
-                }
-                // TODO get opensource scan
                 if (gitOperations.isProjectPresent(scanRequest)) {
                     GitResponse gitResponse = gitOperations.pull(scanRequest);
                 } else {
                     GitResponse gitResponse = gitOperations.clone(scanRequest);
                 }
+
+                SourceProjectType sourceProjectType = CodeHelper.getSourceProjectTypeFromDirectory(scanRequest, false);
+                if (sourceProjectType == null) {
+                    log.error("Repository doesnt contain any of the known types of projects. Current version support only JAVA-Maven projects.");
+                    return new ResponseEntity<>(HttpStatus.PRECONDITION_FAILED);
+                }
+
                 ScannerIntegrationFactory openSourceScan = scannerFactory.getProperScanner(ScannerPluginType.DEPENDENCYTRACK);
                 openSourceScan.runScan(scanRequest);
 
@@ -55,6 +56,10 @@ public class BaseService {
                     case MAVEN:
                         ScannerIntegrationFactory spotbug = scannerFactory.getProperScanner(ScannerPluginType.SPOTBUG);
                         spotbug.runScan(scanRequest);
+                        break;
+                    case PIP:
+                        ScannerIntegrationFactory bandit = scannerFactory.getProperScanner(ScannerPluginType.BANDIT);
+                        bandit.runScan(scanRequest);
                         break;
                     default:
                         log.error("Source Code Language not supported");
@@ -67,6 +72,7 @@ public class BaseService {
                 log.error("[REST] Got request with unknown scan type {}", scanRequest.getType().toString());
             }
         } catch (Exception e){
+            e.printStackTrace();
             log.error(e.getLocalizedMessage());
         }
         return new ResponseEntity<>(HttpStatus.OK);
