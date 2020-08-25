@@ -67,8 +67,8 @@ public class CodeHelper {
             return SourceProjectType.NPM;
         }
         File composer = new File(projectLocation + File.separatorChar + "composer.json");
-        if(composer.exists()){
-            return SourceProjectType.COMPOSER;
+        if(composer.exists() || directoryContainsPhp(projectLocation)){
+            return SourceProjectType.PHP;
         }
         Collection pip = FileUtils.listFiles(
                 new File(projectLocation),
@@ -80,6 +80,20 @@ public class CodeHelper {
         }
         return null;
 
+    }
+
+    /**
+     * Check if directory contains php files
+     * @param projectLocation
+     * @return
+     */
+    private static boolean directoryContainsPhp(String projectLocation) {
+        Collection php = FileUtils.listFiles(
+                new File(projectLocation),
+                new RegexFileFilter(".*\\.php"),
+                DirectoryFileFilter.DIRECTORY
+        ).stream().map(File::getName).collect(Collectors.toList());
+        return php.size() > 5;
     }
 
     /**

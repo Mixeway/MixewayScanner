@@ -50,7 +50,7 @@ public class StandAloneService {
             checkMountPoint();
             // Running OpenSource Scan
             ScannerIntegrationFactory scannerIntegrationFactory = scannerFactory.getProperScanner(ScannerPluginType.DEPENDENCYTRACK);
-            //vulnerabilityList.addAll(scannerIntegrationFactory.runScanStandalone());
+            vulnerabilityList.addAll(scannerIntegrationFactory.runScanStandalone());
             //Running SAST based on type of source
             switch (sourceProjectType) {
                 case MAVEN:
@@ -60,6 +60,10 @@ public class StandAloneService {
                 case PIP:
                     ScannerIntegrationFactory bandit = scannerFactory.getProperScanner(ScannerPluginType.BANDIT);
                     vulnerabilityList.addAll(bandit.runScanStandalone());
+                    break;
+                case PHP:
+                    ScannerIntegrationFactory progpilot = scannerFactory.getProperScanner(ScannerPluginType.PROGPILOT);
+                    vulnerabilityList.addAll(progpilot.runScanStandalone());
                     break;
                 default:
                     log.error("Source Code Language not supported");

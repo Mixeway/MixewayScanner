@@ -337,7 +337,7 @@ public class DependencyTrack implements ScannerIntegrationFactory {
             case GRADLE:
                 log.error("[Dependency Track] GRADLE not yet supported");
                 break;
-            case COMPOSER:
+            case PHP:
                 install = new ProcessBuilder("bash", "-c", "composer require --dev cyclonedx/cyclonedx-php-composer");
                 install.directory(new File(directory));
                 installProcess = install.start();

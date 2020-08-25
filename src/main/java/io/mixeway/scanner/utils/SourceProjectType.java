@@ -8,5 +8,5 @@ public enum SourceProjectType {
     GRADLE,
     NPM,
     PIP,
-    COMPOSER
+    PHP
 }
