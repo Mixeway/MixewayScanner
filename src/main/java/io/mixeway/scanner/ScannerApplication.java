@@ -1,5 +1,6 @@
 package io.mixeway.scanner;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.mixeway.scanner.factory.ScannerFactory;
 import io.mixeway.scanner.integrations.ScannerIntegrationFactory;
 import io.mixeway.scanner.standalone.StandAloneService;
@@ -43,7 +44,7 @@ class StandaloneMixewayApp {
         this.standAloneService = standAloneService;
     }
     @EventListener(ApplicationReadyEvent.class)
-    public void runStandaloneMixewayScannerApp() {
+    public void runStandaloneMixewayScannerApp() throws JsonProcessingException {
         standAloneService.runScan();
     }
 }

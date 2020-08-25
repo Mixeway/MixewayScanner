@@ -1,5 +1,9 @@
 package io.mixeway.scanner.standalone;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import io.mixeway.scanner.factory.ScannerFactory;
 import io.mixeway.scanner.integrations.ScannerIntegrationFactory;
 import io.mixeway.scanner.rest.model.ScanRequest;
@@ -13,6 +17,8 @@ import org.springframework.stereotype.Service;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Class which run Standalone test. Gets current location as mounted application, check for language used and then
@@ -33,7 +39,8 @@ public class StandAloneService {
      * Running scan in hardcoded location, first it check if location exists (is mounted during docker run),
      * and if yes it go full SAST scan, if not log info and exit.
      */
-    public void runScan() {
+    public void runScan() throws JsonProcessingException {
+        List<Vulnerability> vulnerabilityList = new ArrayList<>();
         SourceProjectType sourceProjectType = CodeHelper.getSourceProjectTypeFromDirectory(new ScanRequest(), true);
         if (sourceProjectType == null) {
             log.error("Repository doesnt contain any of the known types of projects. Current version support only JAVA-Maven projects.");
@@ -43,16 +50,16 @@ public class StandAloneService {
             checkMountPoint();
             // Running OpenSource Scan
             ScannerIntegrationFactory scannerIntegrationFactory = scannerFactory.getProperScanner(ScannerPluginType.DEPENDENCYTRACK);
-            scannerIntegrationFactory.runScanStandalone();
+            //vulnerabilityList.addAll(scannerIntegrationFactory.runScanStandalone());
             //Running SAST based on type of source
             switch (sourceProjectType) {
                 case MAVEN:
                     ScannerIntegrationFactory spotbug = scannerFactory.getProperScanner(ScannerPluginType.SPOTBUG);
-                    spotbug.runScanStandalone();
+                    vulnerabilityList.addAll(spotbug.runScanStandalone());
                     break;
                 case PIP:
                     ScannerIntegrationFactory bandit = scannerFactory.getProperScanner(ScannerPluginType.BANDIT);
-                    bandit.runScanStandalone();
+                    vulnerabilityList.addAll(bandit.runScanStandalone());
                     break;
                 default:
                     log.error("Source Code Language not supported");
@@ -61,6 +68,20 @@ public class StandAloneService {
         } catch (Exception e ){
             log.error("[Standalone Mixeway App] Fatal error: {}", e.getLocalizedMessage());
         }
+        printResults(vulnerabilityList);
+    }
+
+    /**
+     * Printing results
+     *
+     * @param vulnerabilityList
+     */
+    private void printResults(List<Vulnerability> vulnerabilityList) throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.enable(SerializationFeature.INDENT_OUTPUT);
+        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        String json = mapper.writeValueAsString(vulnerabilityList);
+        System.out.println(json);
     }
 
     /**

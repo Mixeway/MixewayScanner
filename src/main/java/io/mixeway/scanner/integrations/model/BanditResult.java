@@ -11,7 +11,7 @@ public class BanditResult {
     private String filename;
     private String issue_text;
     private String test_name;
-    private String reference;
+    private String more_info;
     private String issue_severity;
     private String code;
 
@@ -47,12 +47,12 @@ public class BanditResult {
         this.test_name = test_name;
     }
 
-    public String getReference() {
-        return reference;
+    public String getMore_info() {
+        return more_info;
     }
 
-    public void setReference(String reference) {
-        this.reference = reference;
+    public void setMore_info(String more_info) {
+        this.more_info = more_info;
     }
 
     public String getIssue_severity() {

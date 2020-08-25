@@ -17,6 +17,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Service
 public class BaseService {
     private final static Logger log = LoggerFactory.getLogger(BaseService.class);
@@ -34,7 +37,8 @@ public class BaseService {
      * @param scanRequest sent by client
      * @return status
      */
-    public ResponseEntity<Status> runScan(ScanRequest scanRequest) {
+    public ResponseEntity<List<Vulnerability>> runScan(ScanRequest scanRequest) {
+        List<Vulnerability> vulnerabilities = new ArrayList<>();
         try {
             if (scanRequest.getType().equals(ScannerType.SAST)) {
                 if (gitOperations.isProjectPresent(scanRequest)) {
@@ -50,16 +54,16 @@ public class BaseService {
                 }
 
                 ScannerIntegrationFactory openSourceScan = scannerFactory.getProperScanner(ScannerPluginType.DEPENDENCYTRACK);
-                openSourceScan.runScan(scanRequest);
+                //vulnerabilities.addAll(openSourceScan.runScan(scanRequest));
 
                 switch (sourceProjectType) {
                     case MAVEN:
                         ScannerIntegrationFactory spotbug = scannerFactory.getProperScanner(ScannerPluginType.SPOTBUG);
-                        spotbug.runScan(scanRequest);
+                        vulnerabilities.addAll(spotbug.runScan(scanRequest));
                         break;
                     case PIP:
                         ScannerIntegrationFactory bandit = scannerFactory.getProperScanner(ScannerPluginType.BANDIT);
-                        bandit.runScan(scanRequest);
+                        vulnerabilities.addAll(bandit.runScan(scanRequest));
                         break;
                     default:
                         log.error("Source Code Language not supported");
@@ -75,6 +79,6 @@ public class BaseService {
             e.printStackTrace();
             log.error(e.getLocalizedMessage());
         }
-        return new ResponseEntity<>(HttpStatus.OK);
+        return new ResponseEntity<>(vulnerabilities,HttpStatus.OK);
     }
 }
