@@ -5,15 +5,18 @@ import io.mixeway.scanner.integrations.ScannerIntegrationFactory;
 import io.mixeway.scanner.integrations.scanner.DependencyTrack;
 import io.mixeway.scanner.integrations.scanner.Spotbug;
 import io.mixeway.scanner.utils.ScannerPluginType;
+import javafx.scene.effect.Light;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 @Service
 public class ScannerFactory {
     private final DependencyTrack dependencyTrack;
+    private final Spotbug spotbug;
 
-    public ScannerFactory(DependencyTrack dependencyTrack){
+    public ScannerFactory(DependencyTrack dependencyTrack, Spotbug spotbug){
         this.dependencyTrack = dependencyTrack;
+        this.spotbug = spotbug;
     }
 
     /**
@@ -29,7 +32,7 @@ public class ScannerFactory {
                 scanner = dependencyTrack;
                 break;
             case SPOTBUG:
-                scanner = new Spotbug();
+                scanner = spotbug;
                 break;
         }
         return scanner;

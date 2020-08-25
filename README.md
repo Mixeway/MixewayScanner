@@ -14,3 +14,4 @@ docker run ...
 
 ### Requirements
 * If OpenSource scan will be conducted on projects other then NPM - sonatype OSS username and sonatype OSS key is required
+* If Maven require to download some custom libraries, link them via `-v ~/.m2:/root/.m2`

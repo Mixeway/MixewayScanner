@@ -8,8 +8,7 @@ package io.mixeway.scanner.rest.controller;
 import io.mixeway.scanner.rest.model.ScanRequest;
 import io.mixeway.scanner.rest.model.Status;
 import io.mixeway.scanner.rest.service.BaseService;
-import io.mixeway.scanner.utils.ScannerPluginType;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -24,7 +23,7 @@ public class BaseController {
         this.baseService = baseService;
     }
     @PostMapping("/run")
-    public Status runScan(@Valid @RequestBody ScanRequest scanRequest) throws Exception {
+    public ResponseEntity<Status> runScan(@Valid @RequestBody ScanRequest scanRequest) throws Exception {
         return baseService.runScan(scanRequest);
     }
 }
