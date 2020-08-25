@@ -1,0 +1,22 @@
+name: Test Build & Deploy beta
+on:
+  push:
+    branches:
+      - '*'
+      - '!master'
+  pull_request:
+    branches:
+      - '*'
+      - '!master'
+jobs:
+  publishbeta:
+    runs-on: ubuntu-16.04
+    steps:
+      - uses: actions/checkout@v1
+      - name: docker actions build & deploy
+        uses: docker/build-push-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+          repository: mixeway/scanner
+          tags: 0.9.0-beta

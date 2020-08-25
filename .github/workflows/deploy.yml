@@ -1,0 +1,17 @@
+name: Deploy prod version
+on:
+  push:
+    branches:
+      - 'master'
+jobs:
+  publishbrod:
+    runs-on: ubuntu-16.04
+    steps:
+      - uses: actions/checkout@v1
+      - name: docker actions build & deploy
+        uses: docker/build-push-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+          repository: mixeway/backend
+          tags: 0.9.0

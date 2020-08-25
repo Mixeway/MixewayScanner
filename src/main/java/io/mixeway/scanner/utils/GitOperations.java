@@ -51,7 +51,7 @@ public class GitOperations {
             FileRepositoryBuilder builder = new FileRepositoryBuilder();
             CredentialsProvider credentialsProvider = prepareCredentails(scanRequest);
 
-            Repository repository = builder.setGitDir(Paths.get(sourceLocation + File.separatorChar + CodeHelper.getNameFromRepoUrlforSAST(scanRequest.getTarget()) + File.separatorChar + ".git").toFile())
+            Repository repository = builder.setGitDir(Paths.get(sourceLocation + File.separatorChar + CodeHelper.getNameFromRepoUrlforSAST(scanRequest.getTarget(), false) + File.separatorChar + ".git").toFile())
                     .readEnvironment()
                     .findGitDir()
                     .build();
@@ -88,7 +88,7 @@ public class GitOperations {
             Git git = Git.cloneRepository()
                     .setCredentialsProvider(prepareCredentails(scanRequest))
                     .setURI(scanRequest.getTarget() + ".git")
-                    .setDirectory(Paths.get(sourceLocation + File.separatorChar + CodeHelper.getNameFromRepoUrlforSAST(scanRequest.getTarget())).toFile())
+                    .setDirectory(Paths.get(sourceLocation + File.separatorChar + CodeHelper.getNameFromRepoUrlforSAST(scanRequest.getTarget(), false)).toFile())
                     .call();
             Ref call = git.checkout().setName("origin/" + (scanRequest.getBranch() != null ? scanRequest.getBranch() : Constants.GIT_BRANCH_MASTER)).call();
             String commitId = git.log().setMaxCount(1).call().iterator().next().getName();
@@ -125,7 +125,7 @@ public class GitOperations {
      * @return boolean if location exists or not
      */
     public boolean isProjectPresent(ScanRequest scanRequest){
-        Path path = Paths.get(sourceLocation + File.separatorChar + CodeHelper.getNameFromRepoUrlforSAST(scanRequest.getTarget()));
+        Path path = Paths.get(sourceLocation + File.separatorChar + CodeHelper.getNameFromRepoUrlforSAST(scanRequest.getTarget(), false));
         return Files.exists(path);
     }
 

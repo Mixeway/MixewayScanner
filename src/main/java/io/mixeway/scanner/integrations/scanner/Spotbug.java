@@ -21,4 +21,9 @@ public class Spotbug implements ScannerIntegrationFactory {
     public void runScan(ScanRequest scanRequest) {
 
     }
+
+    @Override
+    public void runScanStandalone() throws Exception {
+
+    }
 }

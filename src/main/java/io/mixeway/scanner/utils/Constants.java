@@ -5,6 +5,8 @@
  */
 package io.mixeway.scanner.utils;
 
+import java.net.URI;
+
 public final class Constants {
     public static final String DEPENDENCYTRACK_USERNAME = "admin";
     public static final String DEPENDENCYTRACK_PASSWORD = "admin";
@@ -22,5 +24,6 @@ public final class Constants {
     public static final String DEPENDENCYTRACK_URL_CHANGE_PASSWORD = "/api/v1/user/forceChangePassword";
     public static final String DEPENDENCYTRACK_URL_UPLOAD_BOM = "/api/v1/bom";
 
-    public static final Object DEPENDENCYTRACK_URL_VULNS = "/api/v1/vulnerability/project/";
+    public static final String DEPENDENCYTRACK_URL_VULNS = "/api/v1/vulnerability/project/";
+    public static final String STANDALONE_DEFAULT_SOURCE_PATH = "/Users/gs/Documents/workspace/MixewayScanner/script";
 }
