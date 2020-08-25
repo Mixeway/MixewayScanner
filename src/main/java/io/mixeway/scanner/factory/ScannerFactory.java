@@ -1,12 +1,9 @@
 package io.mixeway.scanner.factory;
 
-import io.mixeway.scanner.db.repository.DependencyTrackRepository;
 import io.mixeway.scanner.integrations.ScannerIntegrationFactory;
 import io.mixeway.scanner.integrations.scanner.DependencyTrack;
 import io.mixeway.scanner.integrations.scanner.Spotbug;
 import io.mixeway.scanner.utils.ScannerPluginType;
-import javafx.scene.effect.Light;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 @Service
