@@ -13,6 +13,7 @@ import io.mixeway.scanner.rest.model.ScanRequest;
 import io.mixeway.scanner.rest.service.BaseService;
 import io.mixeway.scanner.utils.CodeHelper;
 import io.mixeway.scanner.utils.SourceProjectType;
+import io.mixeway.scanner.utils.Vulnerability;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -22,6 +23,8 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 @Component
 public class Spotbug implements ScannerIntegrationFactory {
@@ -36,7 +39,7 @@ public class Spotbug implements ScannerIntegrationFactory {
      * @param scanRequest
      */
     @Override
-    public void runScan(ScanRequest scanRequest) throws IOException, InterruptedException {
+    public List<Vulnerability> runScan(ScanRequest scanRequest) throws IOException, InterruptedException {
         log.info("[Spotbug] Starting to package app {}", scanRequest.getTarget());
         String projectDirectory = CodeHelper.getProjectPath(scanRequest, false);
         ProcessBuilder packageApp = new ProcessBuilder("bash", "-c", "mvn package -DskipTests");
@@ -50,16 +53,26 @@ public class Spotbug implements ScannerIntegrationFactory {
         spotbugProcess.waitFor();
         log.info("[Spotbug] Report ready to process {}", scanRequest.getTarget());
         SpotbugReportXML spotbugReportXML = processXmlReport(projectDirectory + File.separatorChar + "target" + File.separatorChar + "spotbugsXml.xml");
-        log.info("[Spotbug] Detected vulnerabilities: ");
-        for (BugInstance bugInstance : spotbugReportXML.getBugInstanceList()){
-            log.info("Location {}, severity {}, cwe {}, name {}, description {}", bugInstance.getSourceLine().getSourcepath(), bugInstance.getPriority(), bugInstance.getCweid(),
-                    bugInstance.getCategory(), bugInstance.getLongMessage());
-        }
+        log.info("[Spotbug] Scan completed");
+        return convertSpotbugReportIntoVulnList(spotbugReportXML);
 
     }
 
+    /**
+     * Converts spotbug XML report into Vulnerabilities
+     * @param spotbugReportXML report to parse
+     * @return list of shared items
+     */
+    private List<Vulnerability> convertSpotbugReportIntoVulnList(SpotbugReportXML spotbugReportXML) {
+        List<Vulnerability> vulnerabilities = new ArrayList<>();
+        for (BugInstance bugInstance : spotbugReportXML.getBugInstanceList()){
+            vulnerabilities.add(new Vulnerability(bugInstance));
+        }
+        return vulnerabilities;
+    }
+
     @Override
-    public void runScanStandalone() throws IOException, InterruptedException {
+    public List<Vulnerability> runScanStandalone() throws IOException, InterruptedException {
         String projectDirectory = CodeHelper.getProjectPath(new ScanRequest(), true);
         log.info("[Spotbug] Starting to package app {}", projectDirectory);
         ProcessBuilder packageApp = new ProcessBuilder("bash", "-c", "mvn package -DskipTests");
@@ -73,11 +86,8 @@ public class Spotbug implements ScannerIntegrationFactory {
         spotbugProcess.waitFor();
         log.info("[Spotbug] Report ready to process {}", projectDirectory);
         SpotbugReportXML spotbugReportXML = processXmlReport(projectDirectory + File.separatorChar + "target" + File.separatorChar + "spotbugsXml.xml");
-        log.info("[Spotbug] Detected vulnerabilities: ");
-        for (BugInstance bugInstance : spotbugReportXML.getBugInstanceList()){
-            log.info("Location {}, severity {}, cwe {}, name {}, description {}", bugInstance.getSourceLine().getSourcepath(), bugInstance.getPriority(), bugInstance.getCweid(),
-                    bugInstance.getCategory(), bugInstance.getLongMessage());
-        }
+        log.info("[Spotbug] Scan completed");
+        return convertSpotbugReportIntoVulnList(spotbugReportXML);
     }
 
     /**

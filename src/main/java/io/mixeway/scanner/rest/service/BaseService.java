@@ -17,6 +17,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Service
 public class BaseService {
     private final static Logger log = LoggerFactory.getLogger(BaseService.class);
@@ -34,27 +37,33 @@ public class BaseService {
      * @param scanRequest sent by client
      * @return status
      */
-    public ResponseEntity<Status> runScan(ScanRequest scanRequest) {
+    public ResponseEntity<List<Vulnerability>> runScan(ScanRequest scanRequest) {
+        List<Vulnerability> vulnerabilities = new ArrayList<>();
         try {
             if (scanRequest.getType().equals(ScannerType.SAST)) {
-                SourceProjectType sourceProjectType = CodeHelper.getSourceProjectTypeFromDirectory(scanRequest, false);
-                if (sourceProjectType == null) {
-                    log.error("Repository doesnt contain any of the known types of projects. Current version support only JAVA-Maven projects.");
-                    return new ResponseEntity<>(HttpStatus.PRECONDITION_FAILED);
-                }
-                // TODO get opensource scan
                 if (gitOperations.isProjectPresent(scanRequest)) {
                     GitResponse gitResponse = gitOperations.pull(scanRequest);
                 } else {
                     GitResponse gitResponse = gitOperations.clone(scanRequest);
                 }
+
+                SourceProjectType sourceProjectType = CodeHelper.getSourceProjectTypeFromDirectory(scanRequest, false);
+                if (sourceProjectType == null) {
+                    log.error("Repository doesnt contain any of the known types of projects. Current version support only JAVA-Maven projects.");
+                    return new ResponseEntity<>(HttpStatus.PRECONDITION_FAILED);
+                }
+
                 ScannerIntegrationFactory openSourceScan = scannerFactory.getProperScanner(ScannerPluginType.DEPENDENCYTRACK);
-                openSourceScan.runScan(scanRequest);
+                //vulnerabilities.addAll(openSourceScan.runScan(scanRequest));
 
                 switch (sourceProjectType) {
                     case MAVEN:
                         ScannerIntegrationFactory spotbug = scannerFactory.getProperScanner(ScannerPluginType.SPOTBUG);
-                        spotbug.runScan(scanRequest);
+                        vulnerabilities.addAll(spotbug.runScan(scanRequest));
+                        break;
+                    case PIP:
+                        ScannerIntegrationFactory bandit = scannerFactory.getProperScanner(ScannerPluginType.BANDIT);
+                        vulnerabilities.addAll(bandit.runScan(scanRequest));
                         break;
                     default:
                         log.error("Source Code Language not supported");
@@ -67,8 +76,9 @@ public class BaseService {
                 log.error("[REST] Got request with unknown scan type {}", scanRequest.getType().toString());
             }
         } catch (Exception e){
+            e.printStackTrace();
             log.error(e.getLocalizedMessage());
         }
-        return new ResponseEntity<>(HttpStatus.OK);
+        return new ResponseEntity<>(vulnerabilities,HttpStatus.OK);
     }
 }

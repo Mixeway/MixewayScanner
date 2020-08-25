@@ -13,6 +13,7 @@ import io.mixeway.scanner.rest.model.ScanRequest;
 import io.mixeway.scanner.utils.Constants;
 import io.mixeway.scanner.utils.CodeHelper;
 import io.mixeway.scanner.utils.SourceProjectType;
+import io.mixeway.scanner.utils.Vulnerability;
 import org.apache.commons.io.FileUtils;
 import org.apache.tomcat.util.codec.binary.Base64;
 import org.hobsoft.spring.resttemplatelogger.LoggingCustomizer;
@@ -32,6 +33,7 @@ import org.springframework.web.client.RestTemplate;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -71,7 +73,7 @@ public class DependencyTrack implements ScannerIntegrationFactory {
      * @param dependencyTrack to get url and api
      * @param uuid of project to check
      */
-    private void loadVulnerabilities(DependencyTrackEntity dependencyTrack, String uuid ){
+    private List<DTrackVuln> loadVulnerabilities(DependencyTrackEntity dependencyTrack, String uuid ){
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
         headers.set(Constants.DEPENDENCYTRACK_APIKEY_HEADER, dependencyTrack.getApiKey());
@@ -80,15 +82,11 @@ public class DependencyTrack implements ScannerIntegrationFactory {
                     Constants.DEPENDENCYTRACK_URL_VULNS + uuid, HttpMethod.GET, entity, new ParameterizedTypeReference<List<DTrackVuln>>() {
             });
         if (response.getStatusCode() == HttpStatus.OK) {
-            for(DTrackVuln dTrackVuln : response.getBody()){
-                for(io.mixeway.scanner.integrations.model.Component component : dTrackVuln.getComponents()){
-                    log.info("[Dependency Track] {} v{} - {} ({})/ {}", component.getName(), component.getVersion(), dTrackVuln.getVulnId(), dTrackVuln.getSeverity(), uuid);
-                    // TODO Send to Mixeway
-                }
-            }
+            return response.getBody();
         } else {
             log.error("[Dependency Track] Unable to get Findings from Dependency Track for project {}", uuid);
         }
+        return null;
     }
 
     /**
@@ -190,7 +188,7 @@ public class DependencyTrack implements ScannerIntegrationFactory {
      * @throws Exception
      */
     @Override
-    public void runScan(ScanRequest scanRequest) throws Exception {
+    public List<Vulnerability> runScan(ScanRequest scanRequest) throws Exception {
         this.prepare();
         Optional<DependencyTrackEntity> dependencyTrack = dependencyTrackRepository.findByEnabledAndApiKeyNotNull(true);
         if(dependencyTrack.isPresent()) {
@@ -207,18 +205,29 @@ public class DependencyTrack implements ScannerIntegrationFactory {
             sendBomToDTrack(dependencyTrack.get(), uuid, bomPath);
             //Sleep untill DTrack audit the bom
             TimeUnit.SECONDS.sleep(30);
-            loadVulnerabilities(dependencyTrack.get(),uuid);
+            log.info("[Dependency Track] Scan completed");
+            return convertDTrackResponseToVulnerabilities(loadVulnerabilities(dependencyTrack.get(),uuid));
         } else {
             log.error("[Dependency Track] Trying to run scan on not properly initialized scanner. " +
                     "This should not happen, please collect log and issue ticket.");
         }
+        return new ArrayList<>();
+    }
+
+
+    private List<Vulnerability> convertDTrackResponseToVulnerabilities(List<DTrackVuln> loadVulnerabilities) {
+        List<Vulnerability> vulnerabilities = new ArrayList<>();
+        for (DTrackVuln dTrackVuln : loadVulnerabilities){
+            vulnerabilities.add(new Vulnerability(dTrackVuln));
+        }
+        return  vulnerabilities;
     }
 
     /**
      * Running standalone scan
      */
     @Override
-    public void runScanStandalone() throws Exception {
+    public List<Vulnerability> runScanStandalone() throws Exception {
         this.prepare();
         Optional<DependencyTrackEntity> dependencyTrack = dependencyTrackRepository.findByEnabledAndApiKeyNotNull(true);
         if(dependencyTrack.isPresent()) {
@@ -235,11 +244,13 @@ public class DependencyTrack implements ScannerIntegrationFactory {
             sendBomToDTrack(dependencyTrack.get(), uuid, bomPath);
             //Sleep untill DTrack audit the bom
             TimeUnit.SECONDS.sleep(40);
-            loadVulnerabilities(dependencyTrack.get(),uuid);
+            log.info("[Dependency Track] Scan completed");
+            return convertDTrackResponseToVulnerabilities(loadVulnerabilities(dependencyTrack.get(),uuid));
         } else {
             log.error("[Dependency Track] Trying to run scan on not properly initialized scanner. " +
                     "This should not happen, please collect log and issue ticket.");
         }
+        return new ArrayList<>();
     }
 
     /**

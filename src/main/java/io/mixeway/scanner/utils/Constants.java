@@ -25,5 +25,5 @@ public final class Constants {
     public static final String DEPENDENCYTRACK_URL_UPLOAD_BOM = "/api/v1/bom";
 
     public static final String DEPENDENCYTRACK_URL_VULNS = "/api/v1/vulnerability/project/";
-    public static final String STANDALONE_DEFAULT_SOURCE_PATH = "/Users/gs/Documents/workspace/MixewayScanner/mixeway_scan_sources/mixewaybackend";
+    public static final String STANDALONE_DEFAULT_SOURCE_PATH = "/opt/sources";
 }
