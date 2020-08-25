@@ -43,3 +43,4 @@ where target is URL for repo, branch is branch name to be sanned and type is SAS
 |---|---|
 |v0.9.0| JAVA-MAVEN   |
 |v0.9.1| JAVA-MAVEN, Python3|
+|v0.9.2| JAVA-MAVEN, Python3, PHP|

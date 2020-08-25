@@ -13,6 +13,9 @@ RUN yum install nodejs -y
 RUN yum install php-cli php-zip wget unzip php-json -y
 RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
 RUN php composer-setup.php --install-dir=/usr/local/bin --filename=composer
+RUN php -r "copy('https://github.com/designsecurity/progpilot/releases/download/v0.8.0/progpilot_v0.8.0.phar', 'progpilot.phar');"
+RUN chmod +x progpilot.phar
+RUN mv progpilot.phar /bin/progpilot
 
 # Download DTrack
 RUN mkdir /opt/dtrack && wget https://github.com/DependencyTrack/dependency-track/releases/download/3.8.0/dependency-track-embedded.war -O /opt/dtrack/dependency-track-embedded.war

@@ -54,7 +54,7 @@ public class BaseService {
                 }
 
                 ScannerIntegrationFactory openSourceScan = scannerFactory.getProperScanner(ScannerPluginType.DEPENDENCYTRACK);
-                //vulnerabilities.addAll(openSourceScan.runScan(scanRequest));
+                vulnerabilities.addAll(openSourceScan.runScan(scanRequest));
 
                 switch (sourceProjectType) {
                     case MAVEN:
@@ -64,6 +64,10 @@ public class BaseService {
                     case PIP:
                         ScannerIntegrationFactory bandit = scannerFactory.getProperScanner(ScannerPluginType.BANDIT);
                         vulnerabilities.addAll(bandit.runScan(scanRequest));
+                        break;
+                    case PHP:
+                        ScannerIntegrationFactory progpilot = scannerFactory.getProperScanner(ScannerPluginType.PROGPILOT);
+                        vulnerabilities.addAll(progpilot.runScan(scanRequest));
                         break;
                     default:
                         log.error("Source Code Language not supported");

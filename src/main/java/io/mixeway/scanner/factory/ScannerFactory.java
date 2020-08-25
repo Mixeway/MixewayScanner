@@ -3,6 +3,7 @@ package io.mixeway.scanner.factory;
 import io.mixeway.scanner.integrations.ScannerIntegrationFactory;
 import io.mixeway.scanner.integrations.scanner.Bandit;
 import io.mixeway.scanner.integrations.scanner.DependencyTrack;
+import io.mixeway.scanner.integrations.scanner.Progpilot;
 import io.mixeway.scanner.integrations.scanner.Spotbug;
 import io.mixeway.scanner.utils.ScannerPluginType;
 import org.springframework.stereotype.Service;
@@ -12,12 +13,14 @@ public class ScannerFactory {
     private final DependencyTrack dependencyTrack;
     private final Spotbug spotbug;
     private final Bandit bandit;
+    private final Progpilot progpilot;
 
     public ScannerFactory(DependencyTrack dependencyTrack, Spotbug spotbug,
-                          Bandit bandit){
+                          Bandit bandit, Progpilot progpilot){
         this.dependencyTrack = dependencyTrack;
         this.spotbug = spotbug;
         this.bandit = bandit;
+        this.progpilot = progpilot;
     }
 
     /**
@@ -37,6 +40,9 @@ public class ScannerFactory {
                 break;
             case BANDIT:
                 scanner = bandit;
+                break;
+            case PROGPILOT:
+                scanner = progpilot;
                 break;
         }
         return scanner;
