@@ -37,6 +37,11 @@ GET http://localhost:8443/run
 ```
 where target is URL for repo, branch is branch name to be sanned and type is SAST (only this type is supported in current version)
 
+## TLS support for REST API
+By default Mixeway Scanner use self-signed TLS certifiate generated during `docker build` action. 
+If You want to use Your own certificate mount it as `certificate.p12` to `/opt/pki` location (e.g. `-v /etc/pki:/opt/pki`) and then
+during `docker run` pass `-e PKCS12_PASSWORD=<password to pkcs12>` with PKCS12 password.
+
 ## Supported Languages
 
 | Scanner version  | Languages |
