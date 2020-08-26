@@ -204,7 +204,7 @@ public class DependencyTrack implements ScannerIntegrationFactory {
             }
             sendBomToDTrack(dependencyTrack.get(), uuid, bomPath);
             //Sleep untill DTrack audit the bom
-            TimeUnit.SECONDS.sleep(30);
+            TimeUnit.SECONDS.sleep(50);
             log.info("[Dependency Track] Scan completed");
             return convertDTrackResponseToVulnerabilities(loadVulnerabilities(dependencyTrack.get(),uuid));
         } else {
@@ -243,7 +243,7 @@ public class DependencyTrack implements ScannerIntegrationFactory {
             }
             sendBomToDTrack(dependencyTrack.get(), uuid, bomPath);
             //Sleep untill DTrack audit the bom
-            TimeUnit.SECONDS.sleep(40);
+            TimeUnit.SECONDS.sleep(60);
             log.info("[Dependency Track] Scan completed");
             return convertDTrackResponseToVulnerabilities(loadVulnerabilities(dependencyTrack.get(),uuid));
         } else {
