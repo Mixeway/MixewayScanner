@@ -17,6 +17,12 @@ RUN php -r "copy('https://github.com/designsecurity/progpilot/releases/download/
 RUN chmod +x progpilot.phar
 RUN mv progpilot.phar /bin/progpilot
 
+# TLS Support
+RUN mkdir /opt/pki
+RUN openssl req -new -newkey rsa:4096 -days 3650 -nodes -x509 -subj "/O=mixeway.io/CN=mixewayscanner" -keyout certificate.key -out certificate.crt
+RUN openssl pkcs12 -export -in certificate.crt -inkey certificate.key -out certificate.p12 -name "mixeway" -password pass:1qaz@WSX
+RUN mv certificate.p12 /opt/pki/certificate.p12
+
 # Download DTrack
 RUN mkdir /opt/dtrack && wget https://github.com/DependencyTrack/dependency-track/releases/download/3.8.0/dependency-track-embedded.war -O /opt/dtrack/dependency-track-embedded.war
 
