@@ -30,9 +30,11 @@ import java.util.List;
 public class StandAloneService {
     private final static Logger log = LoggerFactory.getLogger(StandAloneService.class);
     ScannerFactory scannerFactory;
-
-    public StandAloneService(ScannerFactory scannerFactory){
+    MixewayConnector mixewayConnector;
+    public StandAloneService(ScannerFactory scannerFactory,
+                             MixewayConnector mixewayConnector){
         this.scannerFactory = scannerFactory;
+        this.mixewayConnector = mixewayConnector;
     }
 
     /**
@@ -72,6 +74,7 @@ public class StandAloneService {
         } catch (Exception e ){
             log.error("[Standalone Mixeway App] Fatal error: {}", e.getLocalizedMessage());
         }
+        mixewayConnector.sendAnonymousRequestToMixeway(vulnerabilityList);
         printResults(vulnerabilityList);
     }
 

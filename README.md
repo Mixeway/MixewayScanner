@@ -22,13 +22,17 @@ Detected vulnerabilities are pushed into console or to Mixeway if integration is
 ### Running options
 * In standalone mode, running container inside directory You want to scan
 ```shell script
-docker run -e OSS_USERNAME=<OSS_USERNAME> -e OSS_KEY=<OSS_KEY> -e MODE=STANDALONE -v ${PWD}:/opt/sources  mixeway/scanner:latest
+docker run -e MODE=STANDALONE \
+    -v ${PWD}:/opt/sources \
+    mixeway/scanner:latest
 ```
 if source to be scaned is located in current direcory. Otherwise, use `-v <location of sources>/opt/sources`
 
 * In REST API mode, container is running and listetning on port :8443
 ```shell script
-docker run -e OSS_USERNAME=<OSS_USERNAME> -e OSS_KEY=<OSS_KEY> -e MODE=REST mixeway/scanner:latest
+docker run \
+     -e MODE=REST \
+     mixeway/scanner:latest
 ```
 example usage:
 ```$xslt
@@ -36,6 +40,23 @@ GET http://localhost:8443/run
 {"target":"https://github.com/mixeway/mixewaybackend", "branch":"master", "type":"SAST"}
 ```
 where target is URL for repo, branch is branch name to be sanned and type is SAST (only this type is supported in current version)
+
+All options and descriptions
+
+| Option                            | Required                 | Default Value          | Description                                                                                                                         |
+|-----------------------------------|--------------------------|------------------------|-------------------------------------------------------------------------------------------------------------------------------------|
+|-e OSS_USERNAME=<user>             | No                       | null                   | Sonatype OSS username - required to perform dependency check on projects other then NPM -to generate- https://ossindex.sonatype.org/|
+|-e OSS_KEY=<key>                   | No                       | null                   | Sonatype OSS API Key - required to perform dependency check on projects other then NPM -to generate- https://ossindex.sonatype.org/ |
+|-e MODE=<REST|STANDALONE>          | No                       | REST                   | Mode of Scanner to run, in REST Mode API is started on :8443 port, in STANDALONE mode, full scan is performed in mounted directory  |
+|-e MIXEWAY_URL=<url>               | No                       | https://hub.mixeway.io | URL to Mixeway to push results if no Mixeway data is passed results of scan will be print to console                                |
+|-e MIXEWAY_KEY=<key>               | No                       | null                   | CICD API Key - to generate in user profile of Mixeway                                                                               |
+|-e MIXEWAY_PROJECT_ID=<id>         | No                       | null                   | ID of project in mixeway to which detected vulnerailities will be set. Required if You want enable Mixeway integration              |
+|-e MIXEWAY_PROJECT_NAME=<name>     | No                       | null                   | Name of project. Required for Mixeway integration with STANDALONE scans.                                                            |
+|-v <project_diretory>:/opt/sources | Yes (STANDALONE version) | null                   | Passing files to scan to docker                                                                                                     |
+
+## Optimization
+* Maven projects - in scope of mvn project, task which takes the most of a time is dependency download. To skip this part just mount
+the `.m2` directory into docker with `-v ~/.m2:/root/.2`
 
 ## TLS support for REST API
 By default Mixeway Scanner use self-signed TLS certifiate generated during `docker build` action. 

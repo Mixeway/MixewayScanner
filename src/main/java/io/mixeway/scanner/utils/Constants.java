@@ -26,4 +26,8 @@ public final class Constants {
 
     public static final String DEPENDENCYTRACK_URL_VULNS = "/api/v1/vulnerability/project/";
     public static final String STANDALONE_DEFAULT_SOURCE_PATH = "/opt/sources";
+    public static final String MIXEWAY_URL_SAAS = "https://hub.mixeway.io";
+    public static final String MIXEWAY_API_KEY = "apikey";
+    public static final String MIXEWAY_PUSH_VULN_URL = "/v2/api/cicd/loadvulnerabilities";
+
 }
