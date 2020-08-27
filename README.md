@@ -45,14 +45,14 @@ All options and descriptions
 
 | Option                            | Required                 | Default Value          | Description                                                                                                                         |
 |-----------------------------------|--------------------------|------------------------|-------------------------------------------------------------------------------------------------------------------------------------|
-|-e OSS_USERNAME=<user>             | No                       | null                   | Sonatype OSS username - required to perform dependency check on projects other then NPM -to generate- https://ossindex.sonatype.org/|
-|-e OSS_KEY=<key>                   | No                       | null                   | Sonatype OSS API Key - required to perform dependency check on projects other then NPM -to generate- https://ossindex.sonatype.org/ |
-|-e MODE=<REST|STANDALONE>          | No                       | REST                   | Mode of Scanner to run, in REST Mode API is started on :8443 port, in STANDALONE mode, full scan is performed in mounted directory  |
-|-e MIXEWAY_URL=<url>               | No                       | https://hub.mixeway.io | URL to Mixeway to push results if no Mixeway data is passed results of scan will be print to console                                |
-|-e MIXEWAY_KEY=<key>               | No                       | null                   | CICD API Key - to generate in user profile of Mixeway                                                                               |
-|-e MIXEWAY_PROJECT_ID=<id>         | No                       | null                   | ID of project in mixeway to which detected vulnerailities will be set. Required if You want enable Mixeway integration              |
-|-e MIXEWAY_PROJECT_NAME=<name>     | No                       | null                   | Name of project. Required for Mixeway integration with STANDALONE scans.                                                            |
-|-v <project_diretory>:/opt/sources | Yes (STANDALONE version) | null                   | Passing files to scan to docker                                                                                                     |
+|-e OSS_USERNAME=\<user\>             | No                       | null                   | Sonatype OSS username - required to perform dependency check on projects other then NPM -to generate- https://ossindex.sonatype.org/|
+|-e OSS_KEY=\<key\>                   | No                       | null                   | Sonatype OSS API Key - required to perform dependency check on projects other then NPM -to generate- https://ossindex.sonatype.org/ |
+|-e MODE=\<REST or STANDALONE\>          | No                       | REST                   | Mode of Scanner to run, in REST Mode API is started on :8443 port, in STANDALONE mode, full scan is performed in mounted directory  |
+|-e MIXEWAY_URL=\<url\>               | No                       | https://hub.mixeway.io | URL to Mixeway to push results if no Mixeway data is passed results of scan will be print to console                                |
+|-e MIXEWAY_KEY=\<key\>               | No                       | null                   | CICD API Key - to generate in user profile of Mixeway                                                                               |
+|-e MIXEWAY_PROJECT_ID=\<id\>         | No                       | null                   | ID of project in mixeway to which detected vulnerailities will be set. Required if You want enable Mixeway integration              |
+|-e MIXEWAY_PROJECT_NAME=\<name\>     | No                       | null                   | Name of project. Required for Mixeway integration with STANDALONE scans.                                                            |
+|-v \<project_diretory\>:/opt/sources | Yes (STANDALONE version) | null                   | Passing files to scan to docker                                                                                                     |
 
 ## Optimization
 * Maven projects - in scope of mvn project, task which takes the most of a time is dependency download. To skip this part just mount
