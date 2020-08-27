@@ -10,13 +10,13 @@ import io.mixeway.scanner.rest.model.ScanRequest;
 import io.mixeway.scanner.utils.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,7 +41,7 @@ public class StandAloneService {
      * Running scan in hardcoded location, first it check if location exists (is mounted during docker run),
      * and if yes it go full SAST scan, if not log info and exit.
      */
-    public void runScan() throws JsonProcessingException {
+    public void runScan() throws JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
         List<Vulnerability> vulnerabilityList = new ArrayList<>();
         SourceProjectType sourceProjectType = CodeHelper.getSourceProjectTypeFromDirectory(new ScanRequest(), true);
         if (sourceProjectType == null) {

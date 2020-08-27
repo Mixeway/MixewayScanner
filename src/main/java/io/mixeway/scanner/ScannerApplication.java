@@ -22,6 +22,10 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.stereotype.Service;
 
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+
 @SpringBootApplication(scanBasePackages = "io.mixeway.scanner")
 @EnableScheduling
 @EnableJpaRepositories("io.mixeway.scanner.db.repository")
@@ -44,7 +48,7 @@ class StandaloneMixewayApp {
         this.standAloneService = standAloneService;
     }
     @EventListener(ApplicationReadyEvent.class)
-    public void runStandaloneMixewayScannerApp() throws JsonProcessingException {
+    public void runStandaloneMixewayScannerApp() throws JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
         standAloneService.runScan();
     }
 }
