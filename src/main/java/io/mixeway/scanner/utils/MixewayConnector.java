@@ -48,7 +48,7 @@ public class MixewayConnector {
             HttpHeaders headers = new HttpHeaders();
             headers.set(Constants.MIXEWAY_API_KEY, mixewayKey);
             headers.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<String> entity = new HttpEntity<>(headers);
+            HttpEntity<List<Vulnerability>> entity = new HttpEntity<>(vulnerabilities,headers);
             ResponseEntity<String> response = restTemplate.exchange(mixewayUrl +
                     Constants.MIXEWAY_PUSH_VULN_URL + "/" + mixewayProject + "/" + projectName + "/" + branch + "/" + commit,
                     HttpMethod.POST, entity, String.class);
@@ -70,7 +70,7 @@ public class MixewayConnector {
             HttpHeaders headers = new HttpHeaders();
             headers.set(Constants.MIXEWAY_API_KEY, mixewayKey);
             headers.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<String> entity = new HttpEntity<>(headers);
+            HttpEntity<List<Vulnerability>> entity = new HttpEntity<>(vulnerabilities, headers);
             ResponseEntity<String> response = restTemplate.exchange(mixewayUrl +
                             Constants.MIXEWAY_PUSH_VULN_URL + "/" + mixewayProjectName,
                     HttpMethod.POST, entity, String.class);
