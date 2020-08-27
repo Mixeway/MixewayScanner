@@ -51,7 +51,7 @@ public class MixewayConnector {
             HttpEntity<String> entity = new HttpEntity<>(headers);
             ResponseEntity<String> response = restTemplate.exchange(mixewayUrl +
                     Constants.MIXEWAY_PUSH_VULN_URL + "/" + mixewayProject + "/" + projectName + "/" + branch + "/" + commit,
-                    HttpMethod.GET, entity, String.class);
+                    HttpMethod.POST, entity, String.class);
             if (response.getStatusCode() == HttpStatus.OK) {
                 log.info("[Mixeway Connector] Results pushed and already visible at {}", mixewayUrl);
             } else {
@@ -73,7 +73,7 @@ public class MixewayConnector {
             HttpEntity<String> entity = new HttpEntity<>(headers);
             ResponseEntity<String> response = restTemplate.exchange(mixewayUrl +
                             Constants.MIXEWAY_PUSH_VULN_URL + "/" + mixewayProjectName,
-                    HttpMethod.GET, entity, String.class);
+                    HttpMethod.POST, entity, String.class);
             if (response.getStatusCode() == HttpStatus.OK) {
                 log.info("[Mixeway Connector] Results pushed and already visible at {}", mixewayUrl);
             } else {
