@@ -52,7 +52,7 @@ public class MixewayConnector {
     }
 
     public void sendAnonymousRequestToMixeway(List<Vulnerability> vulnerabilities){
-        if (StringUtils.isNoneBlank(mixewayProjectName) && StringUtils.isNoneBlank(mixewayKey) && mixewayProject > 0){
+        if (StringUtils.isNoneBlank(mixewayProjectName) && StringUtils.isNoneBlank(mixewayKey)){
             log.info("[Mixeway Connector] Mixeway integraiton is enabled. Starting to push the results to {}", mixewayUrl);
             RestTemplate restTemplate = new RestTemplate();
             HttpHeaders headers = new HttpHeaders();
