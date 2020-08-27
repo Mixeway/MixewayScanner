@@ -8,8 +8,6 @@ echo "Waiting for NVD to load"
 sleep 20
 echo "Starting Mixeway Scanner APP"
 
-env
-
 if [ -n "$MODE" ]; then
   if [[ "$MODE" = "REST" ]] ; then
     echo "Selected mode: REST"
