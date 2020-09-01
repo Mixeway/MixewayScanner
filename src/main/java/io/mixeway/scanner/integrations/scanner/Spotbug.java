@@ -47,7 +47,7 @@ public class Spotbug implements ScannerIntegrationFactory {
         Process packageAppProcess = packageApp.start();
         packageAppProcess.waitFor();
         log.info("[Spotbug] Starting to generate Spotbug report for {}", scanRequest.getTarget());
-        ProcessBuilder spotbug = new ProcessBuilder("bash", "-c", "mvn com.github.spotbugs:spotbugs-maven-plugin:spotbugs").inheritIO();
+        ProcessBuilder spotbug = new ProcessBuilder("bash", "-c", "mvn com.github.spotbugs:spotbugs-maven-plugin:spotbugs").redirectOutput(ProcessBuilder.Redirect.INHERIT);
         spotbug.directory(new File(projectDirectory));
         Process spotbugProcess = spotbug.start();
         spotbugProcess.waitFor();
