@@ -87,7 +87,7 @@ public class StandAloneService {
             log.error("[Standalone Mixeway App] Fatal error: {}", e.getLocalizedMessage());
         }
         if (StringUtils.isNotBlank(mixewayProjectName) && StringUtils.isNotBlank(commitId) && StringUtils.isNotBlank(branch)){
-            mixewayConnector.sendRequestToMixeway(vulnerabilityList, mixewayProjectName, branch, commitId);
+            mixewayConnector.sendRequestToMixewayStandalone(vulnerabilityList, mixewayProjectName, branch, commitId);
         } else {
             mixewayConnector.sendAnonymousRequestToMixeway(vulnerabilityList);
         }

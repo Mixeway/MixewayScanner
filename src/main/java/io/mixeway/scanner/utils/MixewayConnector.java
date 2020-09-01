@@ -62,6 +62,27 @@ public class MixewayConnector {
         }
 
     }
+    public void sendRequestToMixewayStandalone(List<Vulnerability> vulnerabilities, String projectName, String branch, String commit) throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+        if (StringUtils.isNoneBlank(mixewayKey) ){
+            log.info("[Mixeway Connector] Mixeway integraiton is enabled. Starting to push the results to {}", mixewayUrl);
+            RestTemplate restTemplate = getRestTemplate();
+            HttpHeaders headers = new HttpHeaders();
+            headers.set(Constants.MIXEWAY_API_KEY, mixewayKey);
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<List<Vulnerability>> entity = new HttpEntity<>(vulnerabilities,headers);
+            ResponseEntity<String> response = restTemplate.exchange(mixewayUrl +
+                            Constants.MIXEWAY_PUSH_VULN_URL + "/" + projectName + "/" + branch + "/" + commit,
+                    HttpMethod.POST, entity, String.class);
+            if (response.getStatusCode() == HttpStatus.OK) {
+                log.info("[Mixeway Connector] Results pushed and already visible at {}", mixewayUrl);
+            } else {
+                log.error("[Mixeway Connector] Push results to Mixeway - {}", response.getStatusCodeValue());
+            }
+        } else {
+            log.info("[Mixeway Connector] Mixeway integration is not enabled, if You want to push results into mixeway please set MIXEWAY_URL and MIXEWAY_KEY. Read more at docs.");
+        }
+
+    }
 
     public void sendAnonymousRequestToMixeway(List<Vulnerability> vulnerabilities) throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
         if (StringUtils.isNoneBlank(mixewayProjectName) && StringUtils.isNoneBlank(mixewayKey)){
