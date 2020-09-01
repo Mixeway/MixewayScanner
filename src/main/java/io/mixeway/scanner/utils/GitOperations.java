@@ -1,11 +1,12 @@
 /*
- * @created  2020-08-19 : 08:30
+ * @created  2020-08-19 : 18:30
  * @project  MixewayScanner
  * @author   siewer
  */
 package io.mixeway.scanner.utils;
 
 import io.mixeway.scanner.rest.model.ScanRequest;
+import org.eclipse.jgit.api.ListBranchCommand;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,6 +26,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 
 /**
  * Class which enable integration with GIT Repositories

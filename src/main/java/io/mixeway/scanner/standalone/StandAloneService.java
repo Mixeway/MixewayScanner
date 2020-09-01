@@ -8,8 +8,10 @@ import io.mixeway.scanner.factory.ScannerFactory;
 import io.mixeway.scanner.integrations.ScannerIntegrationFactory;
 import io.mixeway.scanner.rest.model.ScanRequest;
 import io.mixeway.scanner.utils.*;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.Files;
@@ -28,13 +30,23 @@ import java.util.List;
  */
 @Service
 public class StandAloneService {
+
+    @Value("${BRANCH:}")
+    String branch;
+    @Value("${COMMIT_ID:}")
+    String commitId;
+    @Value("${MIXEWAY_PROJECT_NAME:}")
+    String mixewayProjectName;
     private final static Logger log = LoggerFactory.getLogger(StandAloneService.class);
     ScannerFactory scannerFactory;
     MixewayConnector mixewayConnector;
+    GitOperations gitOperations;
     public StandAloneService(ScannerFactory scannerFactory,
-                             MixewayConnector mixewayConnector){
+                             MixewayConnector mixewayConnector,
+                             GitOperations gitOperations){
         this.scannerFactory = scannerFactory;
         this.mixewayConnector = mixewayConnector;
+        this.gitOperations = gitOperations;
     }
 
     /**
@@ -74,7 +86,11 @@ public class StandAloneService {
         } catch (Exception e ){
             log.error("[Standalone Mixeway App] Fatal error: {}", e.getLocalizedMessage());
         }
-        mixewayConnector.sendAnonymousRequestToMixeway(vulnerabilityList);
+        if (StringUtils.isNotBlank(mixewayProjectName) && StringUtils.isNotBlank(commitId) && StringUtils.isNotBlank(branch)){
+            mixewayConnector.sendRequestToMixeway(vulnerabilityList, mixewayProjectName, branch, commitId);
+        } else {
+            mixewayConnector.sendAnonymousRequestToMixeway(vulnerabilityList);
+        }
         printResults(vulnerabilityList);
     }
 

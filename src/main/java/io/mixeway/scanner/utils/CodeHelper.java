@@ -40,7 +40,6 @@ public class CodeHelper {
             return repoName.split("\\.")[0];
         }
     }
-
     /**
      * Determine type of source code in given location - JAVA-MVN, JAVA-Gradle, NPM, PIP or PHP-COMPOSER
      *
