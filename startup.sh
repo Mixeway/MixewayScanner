@@ -3,7 +3,7 @@ PROFILES=("REST" "STANDALONE")
 # Run DTrack
 
 echo "Starting Dependency-Track"
-cd /opt/dtrack/ && nohup java -Xmx4G -jar dependency-track-embedded.war
+cd /opt/dtrack/ && nohup java -Xmx4G -XX:ActiveProcessorCount=2 -jar dependency-track-embedded.war
 echo "Waiting for NVD to load"
 sleep 60
 echo "Starting Mixeway Scanner APP"
