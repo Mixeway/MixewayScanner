@@ -5,7 +5,7 @@ PROFILES=("REST" "STANDALONE")
 echo "Starting Dependency-Track"
 cd /opt/dtrack/ && nohup java -Xmx4G -jar dependency-track-embedded.war > /opt/dtrack/dtrack.log 2>&1 &
 echo "Waiting for NVD to load"
-sleep 30
+sleep 60
 echo "Starting Mixeway Scanner APP"
 
 if [ -n "$MODE" ]; then
