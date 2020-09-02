@@ -76,12 +76,12 @@ public class Spotbug implements ScannerIntegrationFactory {
         try {
             String projectDirectory = CodeHelper.getProjectPath(new ScanRequest(), true);
             log.info("[Spotbug] Starting to package app {}", projectDirectory);
-            ProcessBuilder packageApp = new ProcessBuilder("bash", "-c", "mvn package -DskipTests");
+            ProcessBuilder packageApp = new ProcessBuilder("bash", "-c", "mvn package -DskipTests").inheritIO();
             packageApp.directory(new File(projectDirectory));
             Process packageAppProcess = packageApp.start();
             packageAppProcess.waitFor();
             log.info("[Spotbug] Starting to generate Spotbug report for {}", projectDirectory);
-            ProcessBuilder spotbug = new ProcessBuilder("bash", "-c", "mvn com.github.spotbugs:spotbugs-maven-plugin:spotbugs").inheritIO();
+            ProcessBuilder spotbug = new ProcessBuilder("bash", "-c", "mvn -DskipTests com.github.spotbugs:spotbugs-maven-plugin:spotbugs").inheritIO();
             spotbug.directory(new File(projectDirectory));
             Process spotbugProcess = spotbug.start();
             spotbugProcess.waitFor();
