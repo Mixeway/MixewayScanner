@@ -65,6 +65,7 @@ public class StandAloneService {
             // Running OpenSource Scan
             ScannerIntegrationFactory scannerIntegrationFactory = scannerFactory.getProperScanner(ScannerPluginType.DEPENDENCYTRACK);
             vulnerabilityList.addAll(scannerIntegrationFactory.runScanStandalone());
+            log.info("Loaded DependencyTrack vulnerabilities - {}", vulnerabilityList.size());
             //Running SAST based on type of source
             switch (sourceProjectType) {
                 case MAVEN:

@@ -73,21 +73,26 @@ public class Spotbug implements ScannerIntegrationFactory {
 
     @Override
     public List<Vulnerability> runScanStandalone() throws IOException, InterruptedException {
-        String projectDirectory = CodeHelper.getProjectPath(new ScanRequest(), true);
-        log.info("[Spotbug] Starting to package app {}", projectDirectory);
-        ProcessBuilder packageApp = new ProcessBuilder("bash", "-c", "mvn package -DskipTests");
-        packageApp.directory(new File(projectDirectory));
-        Process packageAppProcess = packageApp.start();
-        packageAppProcess.waitFor();
-        log.info("[Spotbug] Starting to generate Spotbug report for {}", projectDirectory);
-        ProcessBuilder spotbug = new ProcessBuilder("bash", "-c", "mvn com.github.spotbugs:spotbugs-maven-plugin:spotbugs").inheritIO();
-        spotbug.directory(new File(projectDirectory));
-        Process spotbugProcess = spotbug.start();
-        spotbugProcess.waitFor();
-        log.info("[Spotbug] Report ready to process {}", projectDirectory);
-        SpotbugReportXML spotbugReportXML = processXmlReport(projectDirectory + File.separatorChar + "target" + File.separatorChar + "spotbugsXml.xml");
-        log.info("[Spotbug] Scan completed");
-        return convertSpotbugReportIntoVulnList(spotbugReportXML);
+        try {
+            String projectDirectory = CodeHelper.getProjectPath(new ScanRequest(), true);
+            log.info("[Spotbug] Starting to package app {}", projectDirectory);
+            ProcessBuilder packageApp = new ProcessBuilder("bash", "-c", "mvn package -DskipTests");
+            packageApp.directory(new File(projectDirectory));
+            Process packageAppProcess = packageApp.start();
+            packageAppProcess.waitFor();
+            log.info("[Spotbug] Starting to generate Spotbug report for {}", projectDirectory);
+            ProcessBuilder spotbug = new ProcessBuilder("bash", "-c", "mvn com.github.spotbugs:spotbugs-maven-plugin:spotbugs").inheritIO();
+            spotbug.directory(new File(projectDirectory));
+            Process spotbugProcess = spotbug.start();
+            spotbugProcess.waitFor();
+            log.info("[Spotbug] Report ready to process {}", projectDirectory);
+            SpotbugReportXML spotbugReportXML = processXmlReport(projectDirectory + File.separatorChar + "target" + File.separatorChar + "spotbugsXml.xml");
+            log.info("[Spotbug] Scan completed");
+            return convertSpotbugReportIntoVulnList(spotbugReportXML);
+        } catch (Exception e) {
+            log.error("[Spotbug] Error occuredd during scanning reason {} on line {}", e.getLocalizedMessage(), e.getStackTrace()[0].getLineNumber());
+            return new ArrayList<>();
+        }
     }
 
     /**
