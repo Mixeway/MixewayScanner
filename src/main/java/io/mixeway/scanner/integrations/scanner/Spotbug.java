@@ -25,6 +25,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Component
 public class Spotbug implements ScannerIntegrationFactory {
@@ -79,11 +80,15 @@ public class Spotbug implements ScannerIntegrationFactory {
             ProcessBuilder packageApp = new ProcessBuilder("bash", "-c", "mvn package -DskipTests").inheritIO();
             packageApp.directory(new File(projectDirectory));
             Process packageAppProcess = packageApp.start();
+            packageAppProcess.waitFor(5, TimeUnit.MINUTES);
+            packageAppProcess.destroy();
             packageAppProcess.waitFor();
             log.info("[Spotbug] Starting to generate Spotbug report for {}", projectDirectory);
             ProcessBuilder spotbug = new ProcessBuilder("bash", "-c", "mvn -DskipTests com.github.spotbugs:spotbugs-maven-plugin:spotbugs").inheritIO();
             spotbug.directory(new File(projectDirectory));
             Process spotbugProcess = spotbug.start();
+            spotbugProcess.waitFor(5, TimeUnit.MINUTES);
+            spotbugProcess.destroy();
             spotbugProcess.waitFor();
             log.info("[Spotbug] Report ready to process {}", projectDirectory);
             SpotbugReportXML spotbugReportXML = processXmlReport(projectDirectory + File.separatorChar + "target" + File.separatorChar + "spotbugsXml.xml");
