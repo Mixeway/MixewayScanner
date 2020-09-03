@@ -328,7 +328,7 @@ public class DependencyTrack implements ScannerIntegrationFactory {
                 log.info("[Dependency Track] Generated SBOM for {}", directory);
                 return directory + File.separatorChar + "bom.xml";
             case MAVEN:
-                generate = new ProcessBuilder("bash", "-c", "mvn -DskipTests -DSPDXParser.OnlyUseLocalLicenses=true org.cyclonedx:cyclonedx-maven-plugin:makeAggregateBom");
+                generate = new ProcessBuilder("bash", "-c", "mvn -DskipTests -DSPDXParser.OnlyUseLocalLicenses=true org.cyclonedx:cyclonedx-maven-plugin:makeAggregateBom").inheritIO();
                 generate.directory(new File(directory));
                 generateProcess = generate.start();
                 generateProcess.waitFor();
