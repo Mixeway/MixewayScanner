@@ -50,12 +50,8 @@ public class Spotbug implements ScannerIntegrationFactory {
         List<SpotbugReportXML> spotbugReportXMLS = new ArrayList<>();
         List<Path> reportPaths = new ArrayList<>();
         String projectDirectory = CodeHelper.getProjectPath(scanRequest, false);
-        ProcessBuilder packageApp = new ProcessBuilder("bash", "-c", "mvn package -DskipTests");
-        packageApp.directory(new File(projectDirectory));
-        Process packageAppProcess = packageApp.start();
-        packageAppProcess.waitFor();
         log.info("[Spotbug] Starting to generate Spotbug report for {}", scanRequest.getTarget());
-        ProcessBuilder spotbug = new ProcessBuilder("bash", "-c", "mvn com.github.spotbugs:spotbugs-maven-plugin:spotbugs");
+        ProcessBuilder spotbug = new ProcessBuilder("bash", "-c", "mvn compile -DskipTests com.github.spotbugs:spotbugs-maven-plugin:spotbugs");
         spotbug.directory(new File(projectDirectory));
         Process spotbugProcess = spotbug.inheritIO().start();
         spotbugProcess.waitFor();
@@ -87,8 +83,10 @@ public class Spotbug implements ScannerIntegrationFactory {
     private List<Vulnerability> convertSpotbugReportIntoVulnList(List<SpotbugReportXML> spotbugReportXMLs) {
         List<Vulnerability> vulnerabilities = new ArrayList<>();
         for (SpotbugReportXML reportXML : spotbugReportXMLs) {
-            for (BugInstance bugInstance : reportXML.getBugInstanceList()) {
-                vulnerabilities.add(new Vulnerability(bugInstance));
+            if (reportXML.getBugInstanceList() !=null) {
+                for (BugInstance bugInstance : reportXML.getBugInstanceList()) {
+                    vulnerabilities.add(new Vulnerability(bugInstance));
+                }
             }
         }
         return vulnerabilities;
@@ -113,6 +111,7 @@ public class Spotbug implements ScannerIntegrationFactory {
             log.info("[Spotbug] Scan completed");
             return convertSpotbugReportIntoVulnList(spotbugReportXMLS);
         } catch (Exception e) {
+            e.printStackTrace();
             log.error("[Spotbug] Error occuredd during scanning reason {} on line {}", e.getLocalizedMessage(), e.getStackTrace()[0].getLineNumber());
             return new ArrayList<>();
         }

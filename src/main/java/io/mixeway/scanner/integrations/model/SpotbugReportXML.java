@@ -24,10 +24,13 @@ public class SpotbugReportXML {
     }
 
     public SpotbugReportXML processSeverity() {
-        this.bugInstanceList.stream().filter(bi -> bi.getPriority().equals("1")).forEach(high -> high.setPriority("High"));
-        this.bugInstanceList.stream().filter(bi -> bi.getPriority().equals("2")).forEach(high -> high.setPriority("Medium"));
-        this.bugInstanceList.stream().filter(bi -> bi.getPriority().equals("3")).forEach(high -> high.setPriority("Low"));
-        this.bugInstanceList.stream().filter(bi -> bi.getPriority().equals("4")).forEach(high -> high.setPriority("Info"));
+        if (this.bugInstanceList != null) {
+            this.bugInstanceList.stream().filter(bi -> bi.getPriority() == null).forEach(info -> info.setPriority("Info"));
+            this.bugInstanceList.stream().filter(bi -> bi.getPriority().equals("1")).forEach(high -> high.setPriority("High"));
+            this.bugInstanceList.stream().filter(bi -> bi.getPriority().equals("2")).forEach(high -> high.setPriority("Medium"));
+            this.bugInstanceList.stream().filter(bi -> bi.getPriority().equals("3")).forEach(high -> high.setPriority("Low"));
+            this.bugInstanceList.stream().filter(bi -> bi.getPriority().equals("4")).forEach(high -> high.setPriority("Info"));
+        }
         return this;
     }
 }

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.google.gson.Gson;
 import io.mixeway.scanner.factory.ScannerFactory;
 import io.mixeway.scanner.integrations.ScannerIntegrationFactory;
 import io.mixeway.scanner.rest.model.ScanRequest;
@@ -14,6 +15,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.KeyManagementException;
@@ -53,7 +57,7 @@ public class StandAloneService {
      * Running scan in hardcoded location, first it check if location exists (is mounted during docker run),
      * and if yes it go full SAST scan, if not log info and exit.
      */
-    public void runScan() throws JsonProcessingException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+    public void runScan() throws IOException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
         List<Vulnerability> vulnerabilityList = new ArrayList<>();
         SourceProjectType sourceProjectType = CodeHelper.getSourceProjectTypeFromDirectory(new ScanRequest(), true);
         if (sourceProjectType == null) {
@@ -93,6 +97,16 @@ public class StandAloneService {
             mixewayConnector.sendAnonymousRequestToMixeway(vulnerabilityList);
         }
         printResults(vulnerabilityList);
+        writeResultsToFile(vulnerabilityList, CodeHelper.getProjectPath(new ScanRequest(), true));
+    }
+
+    private void writeResultsToFile(List<Vulnerability> vulnerabilityList, String directory) {
+        try {
+            Gson gson = new Gson();
+            gson.toJson(vulnerabilityList, new FileWriter(directory + File.separator + "mixeway_sast_report.json"));
+        } catch (Exception e) {
+            log.error("Cannot write to {} check permission or use vulnerabilities from console", directory);
+        }
     }
 
     /**
