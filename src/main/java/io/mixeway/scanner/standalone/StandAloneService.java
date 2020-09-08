@@ -74,6 +74,7 @@ public class StandAloneService {
                 }
             }
         } catch (Exception e ){
+            e.printStackTrace();
             log.error("[Standalone Mixeway App] Fatal error: {}", e.getLocalizedMessage());
         }
         if (StringUtils.isNotBlank(mixewayProjectName) && StringUtils.isNotBlank(commitId) && StringUtils.isNotBlank(branch)){
