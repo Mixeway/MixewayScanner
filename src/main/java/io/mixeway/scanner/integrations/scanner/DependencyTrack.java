@@ -98,6 +98,7 @@ public class DependencyTrack implements ScannerIntegrationFactory {
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
         headers.set(HttpHeaders.AUTHORIZATION, "Bearer " + getOAuthToken());
+        headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<DTrackConfigProperty[]> entity = new HttpEntity<>(prepareOssIntegration(ossUsername,ossKey),headers);
         ResponseEntity<String> response = restTemplate.exchange(Constants.DEPENDENCYTRACK_URL +
                 Constants.DEPENDENCYTRACK_URL_OSS_CONFIG, HttpMethod.POST, entity, String.class);
