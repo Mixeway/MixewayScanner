@@ -9,6 +9,7 @@ RUN yum install git -y
 RUN yum install epel-release -y
 RUN yum install python3-pip -y
 RUN pip3 install bandit
+RUN pip3 install pipreqs
 RUN yum install nodejs -y
 RUN yum install php-cli php-zip wget unzip php-json -y
 RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
