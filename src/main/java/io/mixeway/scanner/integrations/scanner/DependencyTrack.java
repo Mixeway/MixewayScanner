@@ -406,6 +406,7 @@ public class DependencyTrack implements ScannerIntegrationFactory {
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
         headers.set(Constants.DEPENDENCYTRACK_APIKEY_HEADER, dependencyTrackEntity.getApiKey());
+        headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<DTrackCreateProject> entity = new HttpEntity<>(new DTrackCreateProject(standalone? UUID.randomUUID().toString() : name + "_" + branch),headers);
         try {
             ResponseEntity<DTrackCreateProjectResponse> response = restTemplate.exchange(Constants.DEPENDENCYTRACK_URL +
