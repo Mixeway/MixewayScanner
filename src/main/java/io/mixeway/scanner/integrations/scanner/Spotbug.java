@@ -39,6 +39,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -129,7 +130,7 @@ public class Spotbug implements ScannerIntegrationFactory {
             spotbugProcess.waitFor();
             log.info("[Spotbug] Report ready to process {}", projectDirectory);
             searchForReports(spotbugReportXMLS, projectDirectory);
-            //clearAfterPomManipulation(projectDirectory);
+            clearAfterPomManipulation(projectDirectory);
             log.info("[Spotbug] Scan completed, artifact cleared");
             return convertSpotbugReportIntoVulnList(spotbugReportXMLS);
         } catch (Exception e) {
@@ -228,7 +229,7 @@ public class Spotbug implements ScannerIntegrationFactory {
     private void clearAfterPomManipulation(String s) throws IOException, InterruptedException {
         ProcessBuilder spotbug = new ProcessBuilder("bash",
                 "-c",
-                "mv pom.xml.bak pom.xml");
+                "mv pom.xml.bak pom.xml && rm spotbugs-security-include.xml && rm spotbugs-security-exclude.xml");
         spotbug.directory(new File(s));
         Process spotbugProcess = spotbug.start();
         spotbugProcess.waitFor();
@@ -236,6 +237,7 @@ public class Spotbug implements ScannerIntegrationFactory {
 
     /**
      * Create copy of pom.xml
+     * and create Spobugs security XMLs
      */
     private void backupPom(String s) throws IOException, InterruptedException {
         ProcessBuilder spotbug = new ProcessBuilder("bash",
@@ -244,6 +246,16 @@ public class Spotbug implements ScannerIntegrationFactory {
         spotbug.directory(new File(s));
         Process spotbugProcess = spotbug.start();
         spotbugProcess.waitFor();
+        //Create spotbugs-security-include.xml
+        try (Writer writer = new BufferedWriter(new OutputStreamWriter(
+                new FileOutputStream(s + File.separatorChar + "spotbugs-security-include.xml"), StandardCharsets.UTF_8))) {
+            writer.write("<FindBugsFilter><Match><Bug category=\"SECURITY\"/></Match></FindBugsFilter>");
+        }
+        //Create spotbugs-security-exclude.xml
+        try (Writer writer = new BufferedWriter(new OutputStreamWriter(
+                new FileOutputStream(s + File.separatorChar + "spotbugs-security-exclude.xml"), StandardCharsets.UTF_8))) {
+            writer.write("<FindBugsFilter></FindBugsFilter>");
+        }
     }
 
 
