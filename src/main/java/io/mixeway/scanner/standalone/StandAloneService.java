@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.KeyManagementException;
@@ -59,6 +60,7 @@ public class StandAloneService {
      */
     public void runScan() throws IOException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
         List<Vulnerability> vulnerabilityList = new ArrayList<>();
+        String directory = CodeHelper.getProjectPath(new ScanRequest(), true);
         SourceProjectType sourceProjectType = CodeHelper.getSourceProjectTypeFromDirectory(new ScanRequest(), true);
         if (sourceProjectType == null) {
             log.error("Repository doesnt contain any of the known types of projects. Current version support only JAVA-Maven projects.");
@@ -66,29 +68,13 @@ public class StandAloneService {
         }
         try {
             checkMountPoint();
-            // Running OpenSource Scan
-            ScannerIntegrationFactory scannerIntegrationFactory = scannerFactory.getProperScanner(ScannerPluginType.DEPENDENCYTRACK);
-            vulnerabilityList.addAll(scannerIntegrationFactory.runScanStandalone());
-            log.info("Loaded DependencyTrack vulnerabilities - {}", vulnerabilityList.size());
-            //Running SAST based on type of source
-            switch (sourceProjectType) {
-                case MAVEN:
-                    ScannerIntegrationFactory spotbug = scannerFactory.getProperScanner(ScannerPluginType.SPOTBUG);
-                    vulnerabilityList.addAll(spotbug.runScanStandalone());
-                    break;
-                case PIP:
-                    ScannerIntegrationFactory bandit = scannerFactory.getProperScanner(ScannerPluginType.BANDIT);
-                    vulnerabilityList.addAll(bandit.runScanStandalone());
-                    break;
-                case PHP:
-                    ScannerIntegrationFactory progpilot = scannerFactory.getProperScanner(ScannerPluginType.PROGPILOT);
-                    vulnerabilityList.addAll(progpilot.runScanStandalone());
-                    break;
-                default:
-                    log.error("Source Code Language not supported");
-                    System.exit(1);
+            for (SourceProjectType projectType : SourceProjectType.values()){
+                if (CodeHelper.isProjectInLanguage(directory, projectType)){
+                    vulnerabilityList.addAll(scannerFactory.runScanForLanguage(projectType));
+                }
             }
         } catch (Exception e ){
+            e.printStackTrace();
             log.error("[Standalone Mixeway App] Fatal error: {}", e.getLocalizedMessage());
         }
         if (StringUtils.isNotBlank(mixewayProjectName) && StringUtils.isNotBlank(commitId) && StringUtils.isNotBlank(branch)){
@@ -103,7 +89,9 @@ public class StandAloneService {
     private void writeResultsToFile(List<Vulnerability> vulnerabilityList, String directory) {
         try {
             Gson gson = new Gson();
-            gson.toJson(vulnerabilityList, new FileWriter(directory + File.separator + "mixeway_sast_report.json"));
+            Writer writer = new FileWriter(directory + File.separator + "mixeway_sast_report.json");
+            gson.toJson(vulnerabilityList, writer);
+            writer.close();
         } catch (Exception e) {
             log.error("Cannot write to {} check permission or use vulnerabilities from console", directory);
         }

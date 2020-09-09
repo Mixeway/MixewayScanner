@@ -33,10 +33,7 @@ import org.springframework.web.client.RestTemplate;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 @Component
@@ -101,6 +98,7 @@ public class DependencyTrack implements ScannerIntegrationFactory {
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
         headers.set(HttpHeaders.AUTHORIZATION, "Bearer " + getOAuthToken());
+        headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<DTrackConfigProperty[]> entity = new HttpEntity<>(prepareOssIntegration(ossUsername,ossKey),headers);
         ResponseEntity<String> response = restTemplate.exchange(Constants.DEPENDENCYTRACK_URL +
                 Constants.DEPENDENCYTRACK_URL_OSS_CONFIG, HttpMethod.POST, entity, String.class);
@@ -299,7 +297,7 @@ public class DependencyTrack implements ScannerIntegrationFactory {
 
         switch (sourceProjectType) {
             case PIP:
-                ProcessBuilder freeze = new ProcessBuilder("bash", "-c", "pip3 freeze > requirements.txt");
+                ProcessBuilder freeze = new ProcessBuilder("bash", "-c", "pipreqs . --force");
                 install = new ProcessBuilder("bash", "-c", "pip3 install cyclonedx-bom");
                 generate = new ProcessBuilder("bash", "-c", "cyclonedx-py -i requirements.txt -o bom.xml");
                 freeze.directory(new File(directory));
@@ -404,11 +402,12 @@ public class DependencyTrack implements ScannerIntegrationFactory {
      * @param name name of project to be created
      * @return uuid of project
      */
-    private String createProject(DependencyTrackEntity dependencyTrackEntity, String name, String branch) {
+    private String createProject(DependencyTrackEntity dependencyTrackEntity, String name, String branch, boolean standalone) {
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
         headers.set(Constants.DEPENDENCYTRACK_APIKEY_HEADER, dependencyTrackEntity.getApiKey());
-        HttpEntity<DTrackCreateProject> entity = new HttpEntity<>(new DTrackCreateProject(name + "_" + branch),headers);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<DTrackCreateProject> entity = new HttpEntity<>(new DTrackCreateProject(standalone? UUID.randomUUID().toString() : name + "_" + branch),headers);
         try {
             ResponseEntity<DTrackCreateProjectResponse> response = restTemplate.exchange(Constants.DEPENDENCYTRACK_URL +
                     Constants.DEPENDENCYTRACK_GET_PROJECTS, HttpMethod.PUT, entity, DTrackCreateProjectResponse.class);
@@ -458,10 +457,10 @@ public class DependencyTrack implements ScannerIntegrationFactory {
             if (dTrackProject.isPresent()){
                 return dTrackProject.get().getUuid();
             } else {
-                return createProject(dependencyTrackEntity, CodeHelper.getNameFromRepoUrlforSAST(scanRequest.getTarget(), standalone), scanRequest.getBranch());
+                return createProject(dependencyTrackEntity, CodeHelper.getNameFromRepoUrlforSAST(scanRequest.getTarget(), standalone), scanRequest.getBranch(), standalone);
             }
         } else {
-            return createProject(dependencyTrackEntity, CodeHelper.getNameFromRepoUrlforSAST(scanRequest.getTarget(), standalone), scanRequest.getBranch());
+            return createProject(dependencyTrackEntity, CodeHelper.getNameFromRepoUrlforSAST(scanRequest.getTarget(), standalone), scanRequest.getBranch(), standalone);
         }
     }
 }

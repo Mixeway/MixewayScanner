@@ -6,7 +6,12 @@ import io.mixeway.scanner.integrations.scanner.DependencyTrack;
 import io.mixeway.scanner.integrations.scanner.Progpilot;
 import io.mixeway.scanner.integrations.scanner.Spotbug;
 import io.mixeway.scanner.utils.ScannerPluginType;
+import io.mixeway.scanner.utils.SourceProjectType;
+import io.mixeway.scanner.utils.Vulnerability;
 import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class ScannerFactory {
@@ -46,6 +51,26 @@ public class ScannerFactory {
                 break;
         }
         return scanner;
+    }
 
+    public List<Vulnerability> runScanForLanguage(SourceProjectType sourceProjectType) throws Exception {
+        //List<Vulnerability> vulnerabilityList = new ArrayList<>();
+        List<Vulnerability> vulnerabilityList = new ArrayList<>(dependencyTrack.runScanStandalone());
+        switch (sourceProjectType) {
+            case NPM:
+                break;
+            case PHP:
+                vulnerabilityList.addAll(progpilot.runScanStandalone());
+                break;
+            case PIP:
+                vulnerabilityList.addAll(bandit.runScanStandalone());
+                break;
+            case MAVEN:
+                vulnerabilityList.addAll(spotbug.runScanStandalone());
+                break;
+            case GRADLE:
+                break;
+        }
+        return vulnerabilityList;
     }
 }
