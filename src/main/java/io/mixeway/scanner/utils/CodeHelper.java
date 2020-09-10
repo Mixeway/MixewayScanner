@@ -78,8 +78,42 @@ public class CodeHelper {
             return SourceProjectType.PIP;
         }
         return null;
-
     }
+    /**
+     * Check if project is is particular language
+     */
+    public static boolean isProjectInLanguage(String directory, SourceProjectType sourceProjectType){
+        switch (sourceProjectType) {
+            case PIP:
+                Collection pip = FileUtils.listFiles(
+                        new File(directory),
+                        new RegexFileFilter(".*\\.py"),
+                        DirectoryFileFilter.DIRECTORY
+                ).stream().map(File::getName).collect(Collectors.toList());
+                return pip.size() > 3;
+            case GRADLE:
+                File gradle = new File(directory + File.separatorChar + "build.xml");
+                File gradle2 = new File(directory + File.separatorChar + "build.gradle");
+                if (gradle.exists() || gradle2.exists()) {
+                    prepareGradle(gradle);
+                    return true;
+                } else {
+                    return false;
+                }
+            case PHP:
+                File composer = new File(directory + File.separatorChar + "composer.json");
+                return composer.exists() || directoryContainsPhp(directory);
+            case NPM:
+                File npm = new File(directory + File.separatorChar + "package.json");
+                return npm.exists();
+            case MAVEN:
+                File pom = new File(directory + File.separatorChar + "pom.xml");
+                return pom.exists();
+        }
+        return false;
+    }
+
+
 
     /**
      * Check if directory contains php files
