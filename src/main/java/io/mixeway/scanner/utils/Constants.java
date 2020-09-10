@@ -30,4 +30,5 @@ public final class Constants {
     public static final String MIXEWAY_API_KEY = "apikey";
     public static final String MIXEWAY_PUSH_VULN_URL = "/v2/api/cicd/loadvulnerabilities";
 
+    public static final String GATEWAY_SUCCESS = "Ok";
 }

@@ -91,15 +91,36 @@ public class StandAloneService {
         } catch (Exception e ){
             log.error("[Standalone Mixeway App] Fatal error: {}", e.getLocalizedMessage());
         }
-        if (StringUtils.isNotBlank(mixewayProjectName) && StringUtils.isNotBlank(commitId) && StringUtils.isNotBlank(branch)){
-            mixewayConnector.sendRequestToMixewayStandalone(vulnerabilityList, mixewayProjectName, branch, commitId);
-        } else {
-            mixewayConnector.sendAnonymousRequestToMixeway(vulnerabilityList);
-        }
         printResults(vulnerabilityList);
         writeResultsToFile(vulnerabilityList, CodeHelper.getProjectPath(new ScanRequest(), true));
+        processMixeway(vulnerabilityList);
     }
 
+    /**
+     * Send vulnerabilities to Mixeway and waits for results if result is success exit with success, if failure exit with code 1
+     *
+     */
+    private void processMixeway(List<Vulnerability> vulnerabilityList) throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+        Status status;
+        if (StringUtils.isNotBlank(mixewayProjectName) && StringUtils.isNotBlank(commitId) && StringUtils.isNotBlank(branch)){
+            status = mixewayConnector.sendRequestToMixewayStandalone(vulnerabilityList, mixewayProjectName, branch, commitId);
+        } else {
+            status = mixewayConnector.sendAnonymousRequestToMixeway(vulnerabilityList);
+        }
+        if (status != null && status.getStatus().equals(Constants.GATEWAY_SUCCESS)){
+            System.exit(0);
+        } else if (status == null) {
+            System.exit(0);
+        } else {
+            System.exit(1);
+        }
+    }
+
+    /**
+     * Save results to file mixeway_sast_report.json
+     * @param vulnerabilityList
+     * @param directory
+     */
     private void writeResultsToFile(List<Vulnerability> vulnerabilityList, String directory) {
         try {
             Gson gson = new Gson();
