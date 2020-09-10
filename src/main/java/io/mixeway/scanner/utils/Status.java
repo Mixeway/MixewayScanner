@@ -24,6 +24,8 @@ public class Status {
         this.status = status;
     }
 
+    public Status(){}
+
     public Status(String status) {
         this.status = status;
     }
