@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.List;
 import java.util.stream.Collectors;
 
 /**
@@ -104,8 +105,16 @@ public class CodeHelper {
                 File composer = new File(directory + File.separatorChar + "composer.json");
                 return composer.exists() || directoryContainsPhp(directory);
             case NPM:
-                File npm = new File(directory + File.separatorChar + "package.json");
-                return npm.exists();
+                List<String> packagePaths= FileUtils.listFiles(
+                        new File(directory),
+                        new RegexFileFilter(Constants.PACKAGE_FILENAME),
+                        DirectoryFileFilter.DIRECTORY
+                ).stream()
+                        .map(File::getAbsoluteFile)
+                        .map(file -> file.toString()
+                                .split(File.separatorChar + Constants.PACKAGE_FILENAME)[0])
+                        .collect(Collectors.toList());
+                return packagePaths.size()>0;
             case MAVEN:
                 File pom = new File(directory + File.separatorChar + "pom.xml");
                 return pom.exists();

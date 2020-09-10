@@ -61,11 +61,7 @@ public class StandAloneService {
     public void runScan() throws IOException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
         List<Vulnerability> vulnerabilityList = new ArrayList<>();
         String directory = CodeHelper.getProjectPath(new ScanRequest(), true);
-        SourceProjectType sourceProjectType = CodeHelper.getSourceProjectTypeFromDirectory(new ScanRequest(), true);
-        if (sourceProjectType == null) {
-            log.error("Repository doesnt contain any of the known types of projects. Current version support only JAVA-Maven projects.");
-            System.exit(1);
-        }
+
         try {
             checkMountPoint();
             for (SourceProjectType projectType : SourceProjectType.values()){

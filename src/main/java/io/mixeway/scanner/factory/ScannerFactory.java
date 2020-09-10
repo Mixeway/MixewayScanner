@@ -5,13 +5,17 @@ import io.mixeway.scanner.integrations.scanner.Bandit;
 import io.mixeway.scanner.integrations.scanner.DependencyTrack;
 import io.mixeway.scanner.integrations.scanner.Progpilot;
 import io.mixeway.scanner.integrations.scanner.Spotbug;
-import io.mixeway.scanner.utils.ScannerPluginType;
-import io.mixeway.scanner.utils.SourceProjectType;
-import io.mixeway.scanner.utils.Vulnerability;
+import io.mixeway.scanner.rest.model.ScanRequest;
+import io.mixeway.scanner.utils.*;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.DirectoryFileFilter;
+import org.apache.commons.io.filefilter.RegexFileFilter;
 import org.springframework.stereotype.Service;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class ScannerFactory {
@@ -54,23 +58,35 @@ public class ScannerFactory {
     }
 
     public List<Vulnerability> runScanForLanguage(SourceProjectType sourceProjectType) throws Exception {
-        //List<Vulnerability> vulnerabilityList = new ArrayList<>();
-        List<Vulnerability> vulnerabilityList = new ArrayList<>(dependencyTrack.runScanStandalone());
+        List<Vulnerability> vulnerabilityList = new ArrayList<>();
         switch (sourceProjectType) {
             case NPM:
+                List<String> packagePaths= FileUtils.listFiles(
+                        new File(CodeHelper.getProjectPath(new ScanRequest(), true)),
+                        new RegexFileFilter(Constants.PACKAGE_FILENAME),
+                        DirectoryFileFilter.DIRECTORY
+                ).stream()
+                        .map(File::getAbsoluteFile)
+                        .map(file -> file.toString()
+                                .split(File.separatorChar + Constants.PACKAGE_FILENAME)[0])
+                        .collect(Collectors.toList());
+                vulnerabilityList.addAll(dependencyTrack.runScanStandalone(packagePaths));
                 break;
             case PHP:
+                vulnerabilityList.addAll(dependencyTrack.runScanStandalone());
                 vulnerabilityList.addAll(progpilot.runScanStandalone());
                 break;
             case PIP:
+                vulnerabilityList.addAll(dependencyTrack.runScanStandalone());
                 vulnerabilityList.addAll(bandit.runScanStandalone());
                 break;
             case MAVEN:
+                vulnerabilityList.addAll(dependencyTrack.runScanStandalone());
                 vulnerabilityList.addAll(spotbug.runScanStandalone());
                 break;
             case GRADLE:
                 break;
         }
-        return vulnerabilityList;
+        return vulnerabilityList.stream().distinct().collect(Collectors.toList());
     }
 }
