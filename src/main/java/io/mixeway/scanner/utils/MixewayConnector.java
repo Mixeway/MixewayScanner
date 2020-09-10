@@ -49,7 +49,8 @@ public class MixewayConnector {
             HttpEntity<List<Vulnerability>> entity = new HttpEntity<>(vulnerabilities,headers);
             try {
                 ResponseEntity<Status> response = restTemplate.exchange(mixewayUrl +
-                                Constants.MIXEWAY_PUSH_VULN_URL + "/" + mixewayProject + "/" + projectName + "/" + branch + "/" + commit,
+                                Constants.MIXEWAY_PUSH_VULN_URL
+                                + "/" + mixewayProject + "/" + projectName + "/" + branch + "/" + commit,
                         HttpMethod.POST, entity, Status.class);
                 if (response.getStatusCode() == HttpStatus.OK) {
                     log.info("[Mixeway Connector] Results pushed and already visible at {}", mixewayUrl);
@@ -75,7 +76,9 @@ public class MixewayConnector {
             HttpEntity<List<Vulnerability>> entity = new HttpEntity<>(vulnerabilities,headers);
             try {
                 ResponseEntity<Status> response = restTemplate.exchange(mixewayUrl +
-                                Constants.MIXEWAY_PUSH_VULN_URL + "/" + projectName + "/" + branch + "/" + commit,
+                                Constants.MIXEWAY_PUSH_VULN_URL
+                                + (mixewayProject > 0 ? "/"+mixewayProject:"")
+                                + "/" + projectName + "/" + branch + "/" + commit,
                         HttpMethod.POST, entity, Status.class);
                 if (response.getStatusCode() == HttpStatus.OK) {
                     log.info("[Mixeway Connector] Results pushed and already visible at {}", mixewayUrl);
