@@ -81,8 +81,23 @@ public class ScannerFactory {
                 vulnerabilityList.addAll(bandit.runScanStandalone());
                 break;
             case MAVEN:
+                List<String> mvnPackagePaths= FileUtils.listFiles(
+                        new File(CodeHelper.getProjectPath(new ScanRequest(), true)),
+                        new RegexFileFilter(Constants.POM_FILENAME),
+                        DirectoryFileFilter.DIRECTORY
+                ).stream()
+                        .map(File::getAbsoluteFile)
+                        .map(file -> file.toString()
+                                .split(File.separatorChar + Constants.POM_FILENAME)[0])
+                        .collect(Collectors.toList());
                 vulnerabilityList.addAll(dependencyTrack.runScanStandalone());
-                vulnerabilityList.addAll(spotbug.runScanStandalone());
+                for (String mvnPath : mvnPackagePaths) {
+                    vulnerabilityList.addAll(spotbug.runScanStandalone(mvnPath)
+                            .stream()
+                            .filter(vulnerability -> vulnerability.getName().equals(Constants.SPOTBUG_CATEGORY_SECURITY) ||
+                                    vulnerability.getName().equals(Constants.SPOTBUG_CATEGORY_MALICIOUS_CODE))
+                    .collect(Collectors.toList()));
+                }
                 break;
             case GRADLE:
                 break;

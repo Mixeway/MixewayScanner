@@ -139,6 +139,33 @@ public class Spotbug implements ScannerIntegrationFactory {
             return new ArrayList<>();
         }
     }
+    public List<Vulnerability> runScanStandalone(String directory) throws IOException, InterruptedException {
+        try {
+            List<SpotbugReportXML> spotbugReportXMLS = new ArrayList<>();
+            List<Path> reportPaths = new ArrayList<>();
+            String projectDirectory = directory!=null ? directory : CodeHelper.getProjectPath(new ScanRequest(), true);
+            log.info("[Spotbug] Preparing POM, create backup and generate new");
+            preparePomforSpotbugAnalysis(projectDirectory);
+            log.info("[Spotbug] Starting to generate Spotbug report for {}", projectDirectory);
+            ProcessBuilder spotbug = new ProcessBuilder("bash",
+                    "-c",
+                    "mvn compile -DskipTests spotbugs:spotbugs").inheritIO();
+            spotbug.directory(new File(projectDirectory));
+            Process spotbugProcess = spotbug.start();
+            spotbugProcess.waitFor(5, TimeUnit.MINUTES);
+            spotbugProcess.destroy();
+            spotbugProcess.waitFor();
+            log.info("[Spotbug] Report ready to process {}", projectDirectory);
+            searchForReports(spotbugReportXMLS, projectDirectory);
+            clearAfterPomManipulation(projectDirectory);
+            log.info("[Spotbug] Scan completed, artifact cleared");
+            return convertSpotbugReportIntoVulnList(spotbugReportXMLS);
+        } catch (Exception e) {
+            e.printStackTrace();
+            log.error("[Spotbug] Error occuredd during scanning reason {} on line {}", e.getLocalizedMessage(), e.getStackTrace()[0].getLineNumber());
+            return new ArrayList<>();
+        }
+    }
 
     /**
      * Method which takes directory for spotbugXml.xml report file and convert it into readable object

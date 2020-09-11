@@ -24,6 +24,16 @@ public class BugInstance {
     private String longMessage;
     @XmlElement(name= "SourceLine")
     private SourceLine sourceLine;
+    @XmlElement(name= "Details")
+    private String details;
+
+    public String getDetails() {
+        return details;
+    }
+
+    public void setDetails(String details) {
+        this.details = details;
+    }
 
     public SourceLine getSourceLine() {
         return sourceLine;
