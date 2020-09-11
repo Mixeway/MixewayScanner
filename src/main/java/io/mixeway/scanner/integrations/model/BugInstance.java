@@ -22,7 +22,7 @@ public class BugInstance {
     private String type;
     @XmlElement(name = "LongMessage")
     private String longMessage;
-    @XmlElement(name = "ShortDescription")
+    @XmlElement(name = "ShortMessage")
     private String shortDescription;
     @XmlElement(name= "SourceLine")
     private SourceLine sourceLine;

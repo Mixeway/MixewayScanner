@@ -104,7 +104,13 @@ public class Spotbug implements ScannerIntegrationFactory {
         for (SpotbugReportXML reportXML : spotbugReportXMLs) {
             if (reportXML.getBugInstanceList() !=null) {
                 for (BugInstance bugInstance : reportXML.getBugInstanceList()) {
-                    vulnerabilities.add(new Vulnerability(bugInstance));
+                    vulnerabilities.add(new Vulnerability(bugInstance,
+                            reportXML
+                                    .getBugPatterns()
+                                    .stream()
+                                    .filter(bugPattern -> bugPattern.getShortDescriptions().equals(bugInstance.getShortDescription()))
+                                    .findFirst()
+                                    .orElse(null)));
                 }
             }
         }
