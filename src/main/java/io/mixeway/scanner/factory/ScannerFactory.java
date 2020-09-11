@@ -94,8 +94,8 @@ public class ScannerFactory {
                 for (String mvnPath : mvnPackagePaths) {
                     vulnerabilityList.addAll(spotbug.runScanStandalone(mvnPath)
                             .stream()
-                            .filter(vulnerability -> vulnerability.getName().equals(Constants.SPOTBUG_CATEGORY_SECURITY) ||
-                                    vulnerability.getName().equals(Constants.SPOTBUG_CATEGORY_MALICIOUS_CODE))
+                            .filter(vulnerability -> vulnerability.getCategory().equals(Constants.SPOTBUG_CATEGORY_SECURITY) ||
+                                    vulnerability.getCategory().equals(Constants.SPOTBUG_CATEGORY_MALICIOUS_CODE))
                     .collect(Collectors.toList()));
                 }
                 break;
