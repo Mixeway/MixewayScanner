@@ -7,6 +7,7 @@ package io.mixeway.scanner.utils;
 
 import io.mixeway.scanner.rest.model.ScanRequest;
 import org.eclipse.jgit.api.ListBranchCommand;
+import org.eclipse.jgit.revwalk.RevCommit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,6 +28,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * Class which enable integration with GIT Repositories
@@ -35,7 +37,44 @@ import java.util.List;
 public class GitOperations {
     @Value( "${sources.location}" )
     private String sourceLocation;
+    private static String LOCATION_STATIC;
+    @Value("${sources.location}")
+    public void setSourceLocationStatic(String name){
+        GitOperations.LOCATION_STATIC = name;
+    }
     private final Logger log = LoggerFactory.getLogger(GitOperations.class);
+
+    /**
+     * Get default directory of /opt/sources and try to load active branch, last commitID and repo name from it
+     *
+     * @return git info object containing above data
+     */
+    public static GitInformations getGitInformations() {
+        final Logger log = LoggerFactory.getLogger(GitOperations.class);
+        try {
+            FileRepositoryBuilder builder = new FileRepositoryBuilder();
+            Repository repository = builder.setGitDir(Paths.get(LOCATION_STATIC + File.separatorChar + ".git").toFile())
+                    .readEnvironment()
+                    .findGitDir()
+                    .build();
+            RevCommit latestCommit = new Git(repository).log().setMaxCount(1).call().iterator().next();
+            String latestCommitHash = latestCommit.getName();
+
+            GitInformations gitInformations =  GitInformations
+                    .builder()
+                    .branchName(Stream.of(repository.getFullBranch().split("/")).reduce((first, last) -> last).get())
+                    .commitId(latestCommitHash)
+                    .projectName(Stream.of(repository.getConfig().getString("remote", "origin", "url").split("/")).reduce((first, last) -> last).get())
+                    .repoUrl(repository.getConfig().getString("remote", "origin", "url"))
+                    .build();
+            log.info("[GIT] Processing scan for {} with active branch {} and latest commit {}", gitInformations.getProjectName(), gitInformations.getBranchName(), gitInformations.getCommitId());
+            return gitInformations;
+        } catch (IOException | GitAPIException e){
+            log.error("[GIT] Unable to load GIT informations reason - {}", e.getLocalizedMessage());
+        }
+        return null;
+    }
+
 
     /**
      * Method which is pulling git repo based on scanRequest
