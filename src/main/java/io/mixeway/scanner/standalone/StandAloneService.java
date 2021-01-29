@@ -110,9 +110,24 @@ public class StandAloneService {
     private void writeResultsToFile(List<Vulnerability> vulnerabilityList, String directory) {
         try {
             Gson gson = new Gson();
-            Writer writer = new FileWriter(directory + File.separator + "mixeway_sast_report.json");
-            gson.toJson(vulnerabilityList, writer);
-            writer.close();
+            Writer writer = null;
+            try {
+                writer = new FileWriter(directory + File.separator + "mixeway_sast_report.json");
+                gson.toJson(vulnerabilityList, writer);
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                try {
+                    if (writer != null) {
+                        writer.close();
+                    } else {
+                        log.error("Buffer has not been initialized!");
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
         } catch (Exception e) {
             log.error("Cannot write to {} check permission or use vulnerabilities from console", directory);
         }
