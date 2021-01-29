@@ -22,8 +22,28 @@ public class BugInstance {
     private String type;
     @XmlElement(name = "LongMessage")
     private String longMessage;
+    @XmlElement(name = "ShortMessage")
+    private String shortDescription;
     @XmlElement(name= "SourceLine")
     private SourceLine sourceLine;
+    @XmlElement(name= "Details")
+    private String details;
+
+    public String getShortDescription() {
+        return shortDescription;
+    }
+
+    public void setShortDescription(String shortDescription) {
+        this.shortDescription = shortDescription;
+    }
+
+    public String getDetails() {
+        return details;
+    }
+
+    public void setDetails(String details) {
+        this.details = details;
+    }
 
     public SourceLine getSourceLine() {
         return sourceLine;

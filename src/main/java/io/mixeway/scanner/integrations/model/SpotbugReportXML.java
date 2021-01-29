@@ -14,6 +14,16 @@ import java.util.List;
 public class SpotbugReportXML {
     @XmlElement(name="BugInstance")
     List<BugInstance> bugInstanceList;
+    @XmlElement(name="BugPattern")
+    List<BugPattern> bugPatterns;
+
+    public List<BugPattern> getBugPatterns() {
+        return bugPatterns;
+    }
+
+    public void setBugPatterns(List<BugPattern> bugPatterns) {
+        this.bugPatterns = bugPatterns;
+    }
 
     public List<BugInstance> getBugInstanceList() {
         return bugInstanceList;

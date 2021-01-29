@@ -49,7 +49,7 @@ class StandaloneMixewayApp {
         this.standAloneService = standAloneService;
     }
     @EventListener(ApplicationReadyEvent.class)
-    public void runStandaloneMixewayScannerApp() throws IOException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+    public void runStandaloneMixewayScannerApp() throws IOException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException, InterruptedException {
         standAloneService.runScan();
     }
 }

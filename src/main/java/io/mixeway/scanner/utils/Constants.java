@@ -31,4 +31,9 @@ public final class Constants {
     public static final String MIXEWAY_PUSH_VULN_URL = "/v2/api/cicd/loadvulnerabilities";
 
     public static final String GATEWAY_SUCCESS = "Ok";
+    public static final String PACKAGE_FILENAME = "package.json";
+    public static final String POM_FILENAME = "pom.xml";
+    public static final String SPOTBUG_CATEGORY_SECURITY = "SECURITY";
+    public static final String SPOTBUG_CATEGORY_MALICIOUS_CODE = "MALICIOUS_CODE";
+    public static final String MIXEWAY_GET_SCANNER_INFO_URL = "/v2/api/cicd/getscannerinfo";
 }

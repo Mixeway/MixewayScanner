@@ -58,14 +58,10 @@ public class StandAloneService {
      * Running scan in hardcoded location, first it check if location exists (is mounted during docker run),
      * and if yes it go full SAST scan, if not log info and exit.
      */
-    public void runScan() throws IOException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+    public void runScan() throws IOException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException, InterruptedException {
         List<Vulnerability> vulnerabilityList = new ArrayList<>();
         String directory = CodeHelper.getProjectPath(new ScanRequest(), true);
-        SourceProjectType sourceProjectType = CodeHelper.getSourceProjectTypeFromDirectory(new ScanRequest(), true);
-        if (sourceProjectType == null) {
-            log.error("Repository doesnt contain any of the known types of projects. Current version support only JAVA-Maven projects.");
-            System.exit(1);
-        }
+
         try {
             checkMountPoint();
             for (SourceProjectType projectType : SourceProjectType.values()){
@@ -86,13 +82,18 @@ public class StandAloneService {
      * Send vulnerabilities to Mixeway and waits for results if result is success exit with success, if failure exit with code 1
      *
      */
-    private void processMixeway(List<Vulnerability> vulnerabilityList) throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+    private void processMixeway(List<Vulnerability> vulnerabilityList) throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException, InterruptedException {
+        GitInformations gitInformations = GitOperations.getGitInformations();
         Status status;
-        if (StringUtils.isNotBlank(mixewayProjectName) && StringUtils.isNotBlank(commitId) && StringUtils.isNotBlank(branch)){
+        if (gitInformations != null){
+            PrepareCIOperation prepareCiOperations = mixewayConnector.getCIInfo(new GetInfoRequest(gitInformations));
+            status = mixewayConnector.sendRequestToMixewayWithGitInfo(gitInformations, prepareCiOperations, vulnerabilityList);
+        } else if (StringUtils.isNotBlank(mixewayProjectName) && StringUtils.isNotBlank(commitId) && StringUtils.isNotBlank(branch)){
             status = mixewayConnector.sendRequestToMixewayStandalone(vulnerabilityList, mixewayProjectName, branch, commitId);
         } else {
             status = mixewayConnector.sendAnonymousRequestToMixeway(vulnerabilityList);
         }
+
         if (status != null && status.getStatus().equals(Constants.GATEWAY_SUCCESS)){
             System.exit(0);
         } else if (status == null) {

@@ -38,7 +38,7 @@ public class MixewayConnector {
     int mixewayProject;
     @Value("${mixeway.project.name}")
     String mixewayProjectName;
-
+    int tries = 0;
     public Status sendRequestToMixeway(List<Vulnerability> vulnerabilities, String projectName, String branch, String commit) throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
         if (StringUtils.isNoneBlank(mixewayKey) && mixewayProject > 0){
             log.info("[Mixeway Connector] Mixeway integraiton is enabled. Starting to push the results to {}", mixewayUrl);
@@ -121,6 +121,33 @@ public class MixewayConnector {
         }
         return null;
     }
+
+    /**
+     * Geting information about OpenSource scan infos
+     */
+    public PrepareCIOperation getCIInfo(GetInfoRequest getInfoRequest) throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException, InterruptedException {
+
+        RestTemplate restTemplate = getRestTemplate();
+        HttpHeaders headers = new HttpHeaders();
+        headers.set(Constants.MIXEWAY_API_KEY, mixewayKey);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<GetInfoRequest> entity = new HttpEntity<>(getInfoRequest,headers);
+        try {
+            ResponseEntity<PrepareCIOperation> response = restTemplate.exchange(mixewayUrl +
+                            Constants.MIXEWAY_GET_SCANNER_INFO_URL,
+                    HttpMethod.POST, entity, PrepareCIOperation.class);
+            return response.getBody();
+        } catch (HttpClientErrorException | HttpServerErrorException e){
+            tries++;
+            log.error("[Mixeway] Cannot get info for Mixeway configuration... try {} ... reason - {}",tries, e.getLocalizedMessage());
+            if (tries < 4){
+                Thread.sleep(3000);
+                return getCIInfo(getInfoRequest);
+            }
+        }
+        return null;
+    }
+
     public RestTemplate getRestTemplate() throws KeyStoreException, NoSuchAlgorithmException, KeyManagementException {
         TrustStrategy acceptingTrustStrategy = (x509Certificates, s) -> true;
         SSLContext sslContext = org.apache.http.ssl.SSLContexts.custom().loadTrustMaterial(null, acceptingTrustStrategy).build();
@@ -129,5 +156,33 @@ public class MixewayConnector {
         HttpComponentsClientHttpRequestFactory requestFactory = new HttpComponentsClientHttpRequestFactory();
         requestFactory.setHttpClient(httpClient);
         return new RestTemplate(requestFactory);
+    }
+
+    public Status sendRequestToMixewayWithGitInfo(GitInformations gitInformations, PrepareCIOperation prepareCiOperations, List<Vulnerability> vulnerabilityList) throws NoSuchAlgorithmException, KeyStoreException, KeyManagementException {
+        if (StringUtils.isNoneBlank(mixewayKey) ){
+            log.info("[Mixeway Connector] Mixeway integraiton is enabled. Starting to push the results to {}", mixewayUrl);
+            RestTemplate restTemplate = getRestTemplate();
+            HttpHeaders headers = new HttpHeaders();
+            headers.set(Constants.MIXEWAY_API_KEY, mixewayKey);
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<List<Vulnerability>> entity = new HttpEntity<>(vulnerabilityList,headers);
+            try {
+                ResponseEntity<Status> response = restTemplate.exchange(mixewayUrl +
+                                Constants.MIXEWAY_PUSH_VULN_URL
+                                + "/" + gitInformations.getProjectName() + "/" + gitInformations.getBranchName() + "/" + gitInformations.getCommitId(),
+                        HttpMethod.POST, entity, Status.class);
+                if (response.getStatusCode() == HttpStatus.OK) {
+                    log.info("[Mixeway Connector] Results pushed and already visible at {}", mixewayUrl);
+                    return response.getBody();
+                } else {
+                    log.error("[Mixeway Connector] Push results to Mixeway - {}", response.getStatusCodeValue());
+                }
+            } catch (HttpServerErrorException | HttpClientErrorException e) {
+                log.error("[Mixeway Connector] Problem with contaictint with Mixeway - {}",e.getLocalizedMessage());
+            }
+        } else {
+            log.info("[Mixeway Connector] Mixeway integration is not enabled, if You want to push results into mixeway please set MIXEWAY_URL and MIXEWAY_KEY. Read more at docs.");
+        }
+        return null;
     }
 }

@@ -196,7 +196,7 @@ public class DependencyTrack implements ScannerIntegrationFactory {
                 throw new Exception("Unknown project type. Supported: MVN, NPM, Composer, PIP");
             }
             log.info("[Dependency Track] Get UUID {} and type of project {}", uuid, sourceProjectType);
-            String bomPath = generateBom(scanRequest, sourceProjectType, false);
+            String bomPath = generateBom(scanRequest, sourceProjectType, false, null);
             if (bomPath == null) {
                 throw new Exception("SBOM path appears to be null");
             }
@@ -235,7 +235,7 @@ public class DependencyTrack implements ScannerIntegrationFactory {
                 throw new Exception("Unknown project type. Supported: MVN, NPM, Composer, PIP");
             }
             log.info("[Dependency Track] Get UUID {} and type of project {}", uuid, sourceProjectType);
-            String bomPath = generateBom(new ScanRequest(), sourceProjectType, true);
+            String bomPath = generateBom(new ScanRequest(), sourceProjectType, true,null);
             if (bomPath == null) {
                 throw new Exception("SBOM path appears to be null");
             }
@@ -290,8 +290,8 @@ public class DependencyTrack implements ScannerIntegrationFactory {
      * @param sourceProjectType needed to determine which type of execution to be done
      * @return return path to SBOM file
      */
-    private String generateBom(ScanRequest scanRequest, SourceProjectType sourceProjectType, boolean standalone) throws IOException, InterruptedException {
-        String directory = CodeHelper.getProjectPath(scanRequest, standalone);
+    private String generateBom(ScanRequest scanRequest, SourceProjectType sourceProjectType, boolean standalone, String path) throws IOException, InterruptedException {
+        String directory = path!=null ? path : CodeHelper.getProjectPath(scanRequest, standalone);
         ProcessBuilder install, generate;
         Process installProcess, generateProcess;
 
@@ -449,10 +449,16 @@ public class DependencyTrack implements ScannerIntegrationFactory {
      */
     private String getDTrackProjectUuid(DependencyTrackEntity dependencyTrackEntity, ScanRequest scanRequest, boolean standalone){
         List<DTrackProject> dTrackProjects = getProjects(dependencyTrackEntity);
+        String projectName;
+        if (standalone){
+            projectName = UUID.randomUUID().toString();
+        } else {
+            projectName = CodeHelper.getNameFromRepoUrlforSAST(scanRequest.getTarget(), standalone) + "_" + scanRequest.getBranch();
+        }
         if (dTrackProjects!= null && dTrackProjects.size() > 0) {
             Optional<DTrackProject> dTrackProject = dTrackProjects
                     .stream()
-                    .filter(p -> p.getName().equals(CodeHelper.getNameFromRepoUrlforSAST(scanRequest.getTarget(), standalone) + "_" + scanRequest.getBranch()))
+                    .filter(p -> p.getName().equals(projectName))
                     .findFirst();
             if (dTrackProject.isPresent()){
                 return dTrackProject.get().getUuid();
@@ -462,5 +468,44 @@ public class DependencyTrack implements ScannerIntegrationFactory {
         } else {
             return createProject(dependencyTrackEntity, CodeHelper.getNameFromRepoUrlforSAST(scanRequest.getTarget(), standalone), scanRequest.getBranch(), standalone);
         }
+    }
+
+    /**
+     * Running DTrack scan for given path, NPM only supported
+     * @param packagePath path where package.json is located
+     * @return
+     */
+    public List<Vulnerability> runScanStandalone(List<String> packagePath) throws Exception {
+        this.prepare();
+        List<Vulnerability> vulns = new ArrayList<>();
+        List<String> uuids = new ArrayList<>();
+        Optional<DependencyTrackEntity> dependencyTrack = dependencyTrackRepository.findByEnabledAndApiKeyNotNull(true);
+        if(dependencyTrack.isPresent()) {
+            for (String path : packagePath) {
+                String uuid = getDTrackProjectUuid(dependencyTrack.get(), new ScanRequest(), true);
+                //Only NPM supported ATM
+                //SourceProjectType sourceProjectType = CodeHelper.getSourceProjectTypeFromDirectory(new ScanRequest(), true);
+
+                log.info("[Dependency Track] Get UUID {} and type of project {}", uuid, SourceProjectType.NPM);
+                String bomPath = generateBom(new ScanRequest(), SourceProjectType.NPM, true, path);
+                if (bomPath == null) {
+                    throw new Exception("SBOM path appears to be null");
+                }
+                sendBomToDTrack(dependencyTrack.get(), uuid, bomPath);
+                uuids.add(uuid);
+                log.info("[Dependency Track] Scan completed for {}", path);
+            }
+            //Sleep untill DTrack audit the bom
+            TimeUnit.SECONDS.sleep(60);
+            for (String uuid : uuids){
+                vulns.addAll(convertDTrackResponseToVulnerabilities(loadVulnerabilities(dependencyTrack.get(), uuid)));
+            }
+            return vulns;
+
+        } else {
+            log.error("[Dependency Track] Trying to run scan on not properly initialized scanner. " +
+                    "This should not happen, please collect log and issue ticket.");
+        }
+        return new ArrayList<>();
     }
 }
